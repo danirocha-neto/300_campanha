@@ -600,7 +600,7 @@
       return;
     }
     el.innerHTML=filtered.slice().reverse().map(function(s){
-      var d=new Date(s.ts), hh=d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      var d=new Date(s.ts), hh=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
       var tipo=tipoOf(s);
       var names=[s.vend&&'V: '+esc(s.vend),s.ger&&'G: '+esc(s.ger),s.dir&&'D: '+esc(s.dir),s.marca&&'Marca: '+esc(s.marca)].filter(Boolean).join(' · ');
       var editedTag = s.editedAt ? ' <span class="edited">· editado</span>' : '';
