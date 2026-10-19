@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Contador 300 · Campanha · Meta R$ 600.000</title>
+<title>Contador 300 · Campanha R$ 600 mil + Aberturas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -77,6 +77,21 @@
   .split .it .l{color:var(--muted);text-transform:uppercase;letter-spacing:2px;font-weight:700;font-size:clamp(10px,.9vw,14px)}
   .split .it .v{font-family:var(--num);font-weight:700;color:#fff;font-size:clamp(22px,2.8vw,48px);line-height:1.05}
   .split .it .v small{font-size:.5em;color:var(--muted);margin-right:5px}
+  .rightcol{display:flex;flex-direction:column;gap:clamp(12px,1.4vw,22px);min-height:0}
+  .rightcol .side{flex:1}
+  .aber{--ab:#7db0ff;position:relative;background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-top:4px solid var(--ab);
+    border-radius:24px;padding:clamp(14px,2vh,26px) clamp(16px,1.6vw,28px);display:flex;flex-direction:column;gap:clamp(6px,1vh,12px);flex:0 0 auto;transition:border-color .8s ease}
+  .aber h2{font-family:var(--num);text-transform:uppercase;letter-spacing:2px;font-weight:600;font-size:clamp(16px,1.6vw,24px);color:#fff}
+  .aber .abrow{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .aber .abrow .lbl{color:var(--muted);text-transform:uppercase;letter-spacing:2px;font-weight:700;font-size:clamp(10px,.9vw,14px)}
+  .aber .abmeta{font-family:var(--num);font-weight:700;color:#fff;font-size:clamp(18px,1.8vw,30px);cursor:pointer}
+  .aber .abmeta-input{font-family:var(--num);font-weight:700;color:#fff;font-size:clamp(18px,1.8vw,30px);background:#0c0c10;border:1px solid var(--ab);border-radius:8px;padding:2px 8px;width:90px;outline:none}
+  .aber .abbig{font-family:var(--num);font-weight:700;line-height:.9;color:#fff;font-size:clamp(48px,6vw,110px)}
+  .aber .abbig small{font-size:.4em;color:var(--muted);margin-left:8px}
+  .aber .abbar{position:relative;height:clamp(16px,2.2vh,30px);border-radius:999px;background:#0c0c10;border:1px solid var(--line);overflow:hidden}
+  .aber .abfill{position:absolute;inset:0;width:0;border-radius:999px;background:var(--ab);transition:width 1s cubic-bezier(.22,1,.36,1),background .8s ease}
+  .aber .abinfo{display:flex;justify-content:space-between;align-items:flex-end}
+  .aber .abpct{font-family:var(--num);font-weight:700;font-size:clamp(24px,2.6vw,44px);line-height:1;color:var(--ab);transition:color .8s ease}
   .bar-wrap{margin-top:clamp(12px,2vh,26px)}
   .bar{position:relative;height:clamp(26px,3.4vh,48px);border-radius:999px;background:#0c0c10;border:1px solid var(--line);overflow:hidden}
   .fill{position:absolute;inset:0;width:0;border-radius:999px;background:linear-gradient(90deg,var(--acc),var(--acc-2));
@@ -229,8 +244,9 @@
         <div class="sold-val"><span class="cur">R$</span><span id="soldVal">0</span></div>
       </div>
       <div class="split">
-        <div class="it"><span class="l">Vendido no PIX</span><span class="v"><small>R$</small><span id="pixVal">0</span></span></div>
-        <div class="it"><span class="l">Vendido no Cartão</span><span class="v"><small>R$</small><span id="cardVal">0</span></span></div>
+        <div class="it"><span class="l">Venda integral no PIX</span><span class="v"><small>R$</small><span id="pixVal">0</span></span></div>
+        <div class="it"><span class="l">Venda integral no Cartão</span><span class="v"><small>R$</small><span id="cardVal">0</span></span></div>
+        <div class="it sin"><span class="l">Sinais</span><span class="v"><small>R$</small><span id="sinalVal">0</span></span></div>
       </div>
       <div class="bar-wrap">
         <div class="bar"><div class="fill" id="fill"></div></div>
@@ -238,6 +254,14 @@
       </div>
     </div>
 
+    <div class="rightcol">
+    <section class="aber" id="aberCard">
+      <h2>📞 Aberturas de hoje</h2>
+      <div class="abrow"><span class="lbl">Meta do dia</span><span class="abmeta" id="abMetaVal" title="Clique para editar">50</span></div>
+      <div class="abbig"><span id="abCount">0</span><small>/ <span id="abMetaTxt">50</span></small></div>
+      <div class="abbar"><div class="abfill" id="abFill"></div></div>
+      <div class="abinfo"><div class="abpct" id="abPct">0%</div><div class="remain">Faltam <b id="abRemain">50</b></div></div>
+    </section>
     <aside class="side">
       <h2>Premiação</h2>
       <div class="pools">
@@ -254,13 +278,16 @@
         <b>Por venda</b> — PIX: R$300 para Vendedor, Gerente e Diretor &nbsp;|&nbsp; Cartão: R$200 para Vendedor, Gerente e Diretor. Cada unidade conta como 1 venda. Sinal soma no valor, mas só entra na premiação depois de validado.
       </div>
     </aside>
+    </div>
   </div>
 </div>
 
 <div class="fab">
   <button class="btn ghost sm only-full" id="btnHist">Histórico</button>
+  <button class="btn ghost sm only-full" id="btnAbList">Aberturas</button>
   <button class="btn ghost sm only-full" id="btnTV">Modo TV</button>
   <button class="btn ghost sm only-full" id="btnReset">Zerar</button>
+  <button class="btn ghost" id="btnAddAb" style="border-color:#7db0ff">＋ Abertura</button>
   <button class="btn acc" id="btnAdd">＋ Registrar venda</button>
 </div>
 
@@ -336,6 +363,34 @@
   </div>
 </div>
 
+<div class="overlay" id="ovAb">
+  <div class="modal">
+    <h3>Registrar abertura</h3>
+    <div class="desc">Cada abertura conta 1 na meta do dia.</div>
+    <div class="form-grid">
+      <div class="fg full"><label>Marca</label><input id="abMarca" type="text" placeholder="Nome da marca"></div>
+      <div class="fg"><label>Vendedor</label><input id="abVend" type="text" placeholder="Nome do vendedor"></div>
+      <div class="fg"><label>Diretoria</label>
+        <select id="abDir"><option value="" disabled selected>Selecione...</option><option>Fúria</option><option>Guardiões</option></select>
+      </div>
+    </div>
+    <div class="err" id="abErr"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="abCancel">Cancelar</button>
+      <button class="btn acc" id="abSave">Lançar abertura</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovAbList">
+  <div class="hist">
+    <h3>Histórico de aberturas</h3>
+    <div class="desc" style="color:var(--muted);font-size:13px;margin-bottom:12px">A contagem do painel considera só as aberturas de hoje.</div>
+    <div id="abList"></div>
+    <div class="modal-actions"><button class="btn ghost" id="abListClose" style="flex:1;justify-content:center">Fechar</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -355,7 +410,8 @@
   function dirSlug(d){return d==='Fúria'?'furia':d==='Guardiões'?'guardioes':'';}
 
   var sales=[];
-  var fbSalesRef=null, fbMetaRef=null;
+  var fbSalesRef=null, fbMetaRef=null, fbAbRef=null, fbAbMetaRef=null;
+  var aberturas=[], META_AB=50;
 
   var firebaseConfig = {
     apiKey: "AIzaSyCUbCa62_eoggqBizfCzx64wpHxllrv0hY",
@@ -379,6 +435,15 @@
       firebase.initializeApp(firebaseConfig);
       fbSalesRef = firebase.database().ref('campanha600/sales');
       fbMetaRef = firebase.database().ref('campanha600/meta');
+      fbAbRef = firebase.database().ref('campanha600/aberturas');
+      fbAbMetaRef = firebase.database().ref('campanha600/metaAberturas');
+      fbAbRef.on('value', function(snap){
+        var val = snap.val() || {};
+        aberturas = Object.keys(val).map(function(k){ var o=val[k]; o.id=k; return o; }).sort(function(a,b){ return (a.ts||0)-(b.ts||0); });
+        renderAb();
+        if($('ovAbList').classList.contains('on')) renderAbList();
+      });
+      fbAbMetaRef.on('value', function(snap){ var v=snap.val(); if(typeof v==='number' && v>0){ META_AB=v; renderAb(); } });
       firebase.database().ref('.info/connected').on('value', function(snap){ setConn(!!snap.val()); });
 
       fbSalesRef.on('value', function(snap){
@@ -401,11 +466,11 @@
   function fbSetMeta(val){ if(fbMetaRef) fbMetaRef.set(val); }
 
   function compute(){
-    var totalVal=0,totalUn=0,pixVal=0,cardVal=0,people={},sinalPend=0,sinalPendVal=0;
+    var totalVal=0,totalUn=0,pixVal=0,cardVal=0,sinalVal=0,people={},sinalPend=0,sinalPendVal=0;
     function add(name,role,amt){if(!name)return;var key=role+'::'+name.toLowerCase().trim();
       if(!people[key])people[key]={name:name.trim(),role:role,amt:0};people[key].amt+=amt;}
     sales.forEach(function(s){
-      totalVal+=s.valor;totalUn+=s.un;if(s.pag==="Cartao")cardVal+=s.valor;else pixVal+=s.valor;
+      totalVal+=s.valor;totalUn+=s.un;if(tipoOf(s)==="Sinal")sinalVal+=s.valor;else if(s.pag==="Cartao")cardVal+=s.valor;else pixVal+=s.valor;
       if(isEligible(s)){
         var r=RATES[s.pag]||RATES.PIX;
         add(s.vend,'v',s.un*r.v);add(s.ger,'g',s.un*r.g);add(s.dir,'d',s.un*r.d);
@@ -414,7 +479,7 @@
     var poolV=0,poolG=0,poolD=0;
     Object.keys(people).forEach(function(k){var p=people[k];if(p.role==='v')poolV+=p.amt;else if(p.role==='g')poolG+=p.amt;else poolD+=p.amt;});
     var list=Object.keys(people).map(function(k){return people[k];}).sort(function(a,b){return b.amt-a.amt;});
-    return {pixVal:pixVal,cardVal:cardVal,totalVal:totalVal,totalUn:totalUn,poolV:poolV,poolG:poolG,poolD:poolD,list:list,sinalPend:sinalPend,sinalPendVal:sinalPendVal};
+    return {pixVal:pixVal,cardVal:cardVal,sinalVal:sinalVal,totalVal:totalVal,totalUn:totalUn,poolV:poolV,poolG:poolG,poolD:poolD,list:list,sinalPend:sinalPend,sinalPendVal:sinalPendVal};
   }
 
   var prevSold=0;
@@ -454,7 +519,7 @@
     if(pct>=100){ badge.textContent='É META BATIDA'; badge.style.display='inline-flex'; }
     else if(pct>=90){ badge.textContent='Tá quase!!!'; badge.style.display='inline-flex'; }
     else { badge.style.display='none'; }
-    $('pixVal').textContent=brl(c.pixVal);$('cardVal').textContent=brl(c.cardVal);
+    $('pixVal').textContent=brl(c.pixVal);$('cardVal').textContent=brl(c.cardVal);$('sinalVal').textContent=brl(c.sinalVal);
 
     $('fill').style.width=pctClamped+'%';
     $('pct').textContent=(Math.round(pct*10)/10)+'%';
@@ -477,6 +542,66 @@
         +'<div class="who"><div class="nm">'+esc(p.name)+'</div><div class="rc '+r.c+'">'+r.t+'</div></div>'
         +'<div class="ramt">'+money(p.amt)+'</div></div>';}).join('');}
   }
+
+  // ---- aberturas (meta diária) ----
+  function dayKey(ts){var d=new Date(ts);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function renderAb(){
+    var hoje=dayKey(Date.now());
+    var n=aberturas.filter(function(a){return dayKey(a.ts)===hoje;}).length;
+    var pct=n/META_AB*100, pc=Math.min(100,pct);
+    var col='rgb('+colorFor(pc).join(',')+')';
+    $('abCount').textContent=n; $('abMetaTxt').textContent=META_AB; $('abMetaVal').textContent=META_AB;
+    $('abFill').style.width=pc+'%'; $('abFill').style.background=col;
+    $('aberCard').style.setProperty('--ab',col);
+    $('abPct').textContent=(Math.round(pct*10)/10)+'%';
+    $('abRemain').textContent = n>=META_AB ? 'META BATIDA 🎉' : (META_AB-n);
+  }
+  setInterval(renderAb,60000);
+  function startEditMetaAb(){
+    var el=$('abMetaVal'), wrap=el.parentElement;
+    var input=document.createElement('input');
+    input.type='text'; input.inputMode='numeric'; input.className='abmeta-input'; input.value=META_AB;
+    el.style.display='none'; wrap.appendChild(input); input.focus(); input.select();
+    var done=false;
+    function close(){ if(done)return; done=true; input.remove(); el.style.display=''; }
+    function commit(){ var v=parseInt(input.value,10); if(v>0){ META_AB=v; if(fbAbMetaRef) fbAbMetaRef.set(v); } close(); renderAb(); }
+    input.addEventListener('keydown',function(e){ if(e.key==='Enter')commit(); if(e.key==='Escape'){close();} });
+    input.addEventListener('blur',commit);
+  }
+  $('abMetaVal').addEventListener('click',startEditMetaAb);
+  function openAb(){ $('abMarca').value='';$('abVend').value='';$('abDir').value='';$('abErr').textContent='';$('ovAb').classList.add('on'); setTimeout(function(){$('abMarca').focus();},50); }
+  function closeAb(){ $('ovAb').classList.remove('on'); }
+  function saveAb(){
+    var marca=$('abMarca').value.trim(), vend=$('abVend').value.trim(), dir=$('abDir').value;
+    if(!marca||!vend||!dir){ $('abErr').textContent='Preencha marca, vendedor e diretoria.'; return; }
+    var id=Date.now()+'-'+Math.random().toString(36).slice(2,6);
+    if(fbAbRef) fbAbRef.child(id).set({id:id,marca:marca,vend:vend,diretoria:dir,ts:Date.now()});
+    closeAb(); showToast('✅ Abertura registrada');
+  }
+  function renderAbList(){
+    var el=$('abList');
+    if(!aberturas.length){ el.innerHTML='<div class="empty">Nenhuma abertura registrada ainda.</div>'; return; }
+    el.innerHTML=aberturas.slice().reverse().map(function(a){
+      var d=new Date(a.ts), hh=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      return '<div class="hrow"><div><div class="meta"><b>'+esc(a.marca)+'</b> · '+hh
+        +(a.diretoria?'<span class="dirchip '+dirSlug(a.diretoria)+'">'+a.diretoria+'</span>':'')+'</div>'
+        +'<div class="meta">V: '+esc(a.vend)+'</div></div>'
+        +'<div class="hactions"><button class="hbtn del" data-id="'+a.id+'">Excluir</button></div></div>';
+    }).join('');
+    el.querySelectorAll('.hbtn.del').forEach(function(b){b.addEventListener('click',function(){
+      if(!confirm('Excluir esta abertura?'))return;
+      if(fbAbRef) fbAbRef.child(b.getAttribute('data-id')).remove();
+    });});
+  }
+  $('btnAddAb').addEventListener('click',openAb);
+  $('abCancel').addEventListener('click',closeAb);
+  $('abSave').addEventListener('click',saveAb);
+  $('ovAb').addEventListener('click',function(e){if(e.target===this)closeAb();});
+  $('abMarca').addEventListener('keydown',function(e){if(e.key==='Enter')saveAb();});
+  $('abVend').addEventListener('keydown',function(e){if(e.key==='Enter')saveAb();});
+  $('btnAbList').addEventListener('click',function(){renderAbList();$('ovAbList').classList.add('on');});
+  $('abListClose').addEventListener('click',function(){$('ovAbList').classList.remove('on');});
+  $('ovAbList').addEventListener('click',function(e){if(e.target===this)this.classList.remove('on');});
 
   // ---- editar meta (compartilhada via Firebase) ----
   function startEditMeta(){
@@ -678,13 +803,14 @@
     sales.forEach(function(s){ fbRemoveSale(s.id); });
     showToast('Placar zerado.');
   });
-  document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeAdd();closeHist();}
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeAdd();closeHist();closeAb();$('ovAbList').classList.remove('on');}
     var k=(e.key||'').toLowerCase();
     if(k==='n'&&!$('ovAdd').classList.contains('on')&&document.activeElement.tagName!=='INPUT'){openAddNew();}
     if(k==='t'&&document.activeElement.tagName!=='INPUT'){document.body.classList.toggle('tvmode');}
   });
 
   render(false);
+  renderAb();
   initFirebase();
 })();
 </script>
