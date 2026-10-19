@@ -366,13 +366,9 @@
 <div class="overlay" id="ovAb">
   <div class="modal">
     <h3>Registrar abertura</h3>
-    <div class="desc">Cada abertura conta 1 na meta do dia.</div>
+    <div class="desc">Informe quantas aberturas entram na contagem de hoje.</div>
     <div class="form-grid">
-      <div class="fg full"><label>Marca</label><input id="abMarca" type="text" placeholder="Nome da marca"></div>
-      <div class="fg"><label>Vendedor</label><input id="abVend" type="text" placeholder="Nome do vendedor"></div>
-      <div class="fg"><label>Diretoria</label>
-        <select id="abDir"><option value="" disabled selected>Selecione...</option><option>Fúria</option><option>Guardiões</option></select>
-      </div>
+      <div class="fg full"><label>Quantidade de aberturas</label><input id="abQtd" type="number" min="1" value="1" inputmode="numeric"></div>
     </div>
     <div class="err" id="abErr"></div>
     <div class="modal-actions">
@@ -547,7 +543,7 @@
   function dayKey(ts){var d=new Date(ts);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
   function renderAb(){
     var hoje=dayKey(Date.now());
-    var n=aberturas.filter(function(a){return dayKey(a.ts)===hoje;}).length;
+    var n=aberturas.filter(function(a){return dayKey(a.ts)===hoje;}).reduce(function(t,a){return t+(a.qtd>0?a.qtd:1);},0);
     var pct=n/META_AB*100, pc=Math.min(100,pct);
     var col='rgb('+colorFor(pc).join(',')+')';
     $('abCount').textContent=n; $('abMetaTxt').textContent=META_AB; $('abMetaVal').textContent=META_AB;
@@ -569,23 +565,23 @@
     input.addEventListener('blur',commit);
   }
   $('abMetaVal').addEventListener('click',startEditMetaAb);
-  function openAb(){ $('abMarca').value='';$('abVend').value='';$('abDir').value='';$('abErr').textContent='';$('ovAb').classList.add('on'); setTimeout(function(){$('abMarca').focus();},50); }
+  function openAb(){ $('abQtd').value='1';$('abErr').textContent='';$('ovAb').classList.add('on'); setTimeout(function(){$('abQtd').focus();$('abQtd').select();},50); }
   function closeAb(){ $('ovAb').classList.remove('on'); }
   function saveAb(){
-    var marca=$('abMarca').value.trim(), vend=$('abVend').value.trim(), dir=$('abDir').value;
-    if(!marca||!vend||!dir){ $('abErr').textContent='Preencha marca, vendedor e diretoria.'; return; }
+    var q=parseInt($('abQtd').value,10);
+    if(!(q>0)){ $('abErr').textContent='Informe uma quantidade maior que zero.'; return; }
     var id=Date.now()+'-'+Math.random().toString(36).slice(2,6);
-    if(fbAbRef) fbAbRef.child(id).set({id:id,marca:marca,vend:vend,diretoria:dir,ts:Date.now()});
-    closeAb(); showToast('✅ Abertura registrada');
+    if(fbAbRef) fbAbRef.child(id).set({id:id,qtd:q,ts:Date.now()});
+    closeAb(); showToast('✅ +'+q+' abertura'+(q>1?'s':'')+' registrada'+(q>1?'s':''));
   }
   function renderAbList(){
     var el=$('abList');
     if(!aberturas.length){ el.innerHTML='<div class="empty">Nenhuma abertura registrada ainda.</div>'; return; }
     el.innerHTML=aberturas.slice().reverse().map(function(a){
       var d=new Date(a.ts), hh=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-      return '<div class="hrow"><div><div class="meta"><b>'+esc(a.marca)+'</b> · '+hh
-        +(a.diretoria?'<span class="dirchip '+dirSlug(a.diretoria)+'">'+a.diretoria+'</span>':'')+'</div>'
-        +'<div class="meta">V: '+esc(a.vend)+'</div></div>'
+      var extra=(a.marca||a.vend)?'<div class="meta">'+[a.marca&&esc(a.marca),a.vend&&'V: '+esc(a.vend)].filter(Boolean).join(' · ')+'</div>':'';
+      return '<div class="hrow"><div><div class="meta"><b>+'+(a.qtd>0?a.qtd:1)+' abertura'+((a.qtd>1)?'s':'')+'</b> · '+hh
+        +(a.diretoria?'<span class="dirchip '+dirSlug(a.diretoria)+'">'+a.diretoria+'</span>':'')+'</div>'+extra+'</div>'
         +'<div class="hactions"><button class="hbtn del" data-id="'+a.id+'">Excluir</button></div></div>';
     }).join('');
     el.querySelectorAll('.hbtn.del').forEach(function(b){b.addEventListener('click',function(){
@@ -597,8 +593,7 @@
   $('abCancel').addEventListener('click',closeAb);
   $('abSave').addEventListener('click',saveAb);
   $('ovAb').addEventListener('click',function(e){if(e.target===this)closeAb();});
-  $('abMarca').addEventListener('keydown',function(e){if(e.key==='Enter')saveAb();});
-  $('abVend').addEventListener('keydown',function(e){if(e.key==='Enter')saveAb();});
+  $('abQtd').addEventListener('keydown',function(e){if(e.key==='Enter')saveAb();});
   $('btnAbList').addEventListener('click',function(){renderAbList();$('ovAbList').classList.add('on');});
   $('abListClose').addEventListener('click',function(){$('ovAbList').classList.remove('on');});
   $('ovAbList').addEventListener('click',function(e){if(e.target===this)this.classList.remove('on');});
