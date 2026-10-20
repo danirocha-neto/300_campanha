@@ -255,6 +255,7 @@
   .onlywk input{width:18px;height:18px;accent-color:#E63027}
   .onlywk span{color:var(--muted);font-weight:600}
   .wkchip{font-size:10px;font-weight:800;text-transform:uppercase;padding:2px 7px;border-radius:999px;margin-left:6px;background:rgba(255,255,255,.08);color:#fff}
+  .q .projmk{display:none;position:absolute;top:-2px;bottom:-2px;width:4px;margin-left:-2px;background:#fff;border-radius:2px;z-index:3;box-shadow:0 0 8px rgba(255,255,255,.8)}
   .whenbox{background:#0e0e13;border:1px dashed var(--line);border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:14px}
   .whenbox b{color:#fff}
   .tvmode .tabsbar{display:none}
@@ -282,14 +283,14 @@
       <div class="top"><div class="tt"><span class="ttl">📈 Vendas da semana</span><span class="since" id="vsSince"></span></div>
         <span class="mline"><span class="lbl">Meta</span><span class="mv" data-k="vs" title="Clique para editar">—</span></span></div>
       <div class="big"><span class="cur">R$</span><span id="vsVal">0</span></div>
-      <div class="barwrap"><div class="bar2"><div class="fill2" id="vsFill"></div><span class="pt" id="vsPct">0%</span></div>
+      <div class="barwrap"><div class="bar2"><div class="fill2" id="vsFill"></div><span class="pt" id="vsPct">0%</span><i class="projmk" id="vsProj"></i></div>
         <div class="rem" id="vsRem">—</div></div>
     </section>
     <section class="q" id="q_vd">
       <div class="top"><div class="tt"><span class="ttl">💰 Vendas do dia</span><span class="since" id="vdSince"></span></div>
         <span class="mline"><span class="lbl">Meta</span><span class="mv" data-k="vd" title="Clique para editar">—</span></span></div>
       <div class="big"><span class="cur">R$</span><span id="vdVal">0</span></div>
-      <div class="barwrap"><div class="bar2"><div class="fill2" id="vdFill"></div><span class="pt" id="vdPct">0%</span></div>
+      <div class="barwrap"><div class="bar2"><div class="fill2" id="vdFill"></div><span class="pt" id="vdPct">0%</span><i class="projmk" id="vdProj"></i></div>
         <div class="rem" id="vdRem">—</div></div>
     </section>
     </div>
@@ -298,14 +299,14 @@
       <div class="top"><div class="tt"><span class="ttl">📞 Aberturas da semana</span><span class="since" id="asSince"></span></div>
         <span class="mline"><span class="lbl">Meta</span><span class="mv" data-k="as" title="Clique para editar">—</span></span></div>
       <div class="big"><span id="asVal">0</span><small>/ <span id="asMetaTxt">—</span></small></div>
-      <div class="barwrap"><div class="bar2"><div class="fill2" id="asFill"></div><span class="pt" id="asPct">0%</span></div>
+      <div class="barwrap"><div class="bar2"><div class="fill2" id="asFill"></div><span class="pt" id="asPct">0%</span><i class="projmk" id="asProj"></i></div>
         <div class="rem" id="asRem">—</div></div>
     </section>
     <section class="q" id="q_ad">
       <div class="top"><div class="tt"><span class="ttl">📞 Aberturas do dia</span><span class="since" id="adSince"></span></div>
         <span class="mline"><span class="lbl">Meta</span><span class="mv" data-k="ad" title="Clique para editar">—</span></span></div>
       <div class="big"><span id="adVal">0</span><small>/ <span id="adMetaTxt">—</span></small></div>
-      <div class="barwrap"><div class="bar2"><div class="fill2" id="adFill"></div><span class="pt" id="adPct">0%</span></div>
+      <div class="barwrap"><div class="bar2"><div class="fill2" id="adFill"></div><span class="pt" id="adPct">0%</span><i class="projmk" id="adProj"></i></div>
         <div class="rem" id="adRem">—</div></div>
     </section>
     </div>
@@ -430,7 +431,14 @@
       db.ref(ROOT+'/seed/ab20261019').on('value',function(s){ if(s.val()!==true){
         fb.ab.child('seed-20261019').set({id:'seed-20261019',qtd:53,ts:new Date(2026,9,19,12,0,0,0).getTime()});
         db.ref(ROOT+'/seed/ab20261019').set(true); } });
-      fb.metas.on('value',function(s){var v=s.val()||{};M={w:v.w||{},d:v.d||{}};render();});
+      var seededMetas=false;
+      fb.metas.on('value',function(s){var v=s.val()||{};M={w:v.w||{},d:v.d||{}};render();
+        if(!seededMetas){seededMetas=true;
+          db.ref(ROOT+'/seed/metas20261019').on('value',function(f){ if(f.val()===true) return;
+            var W='2026-10-19', put=function(path,val,cur){ if(!(cur>0)) fb.metas.child(path).set(val); };
+            put('w/'+W+'/vs',575000,(M.w[W]||{}).vs); put('w/'+W+'/as',185,(M.w[W]||{}).as);
+            [['2026-10-19',50],['2026-10-20',35],['2026-10-21',35],['2026-10-22',35],['2026-10-23',30]].forEach(function(x){put('d/'+x[0]+'/ad',x[1],(M.d[x[0]]||{}).ad);});
+            db.ref(ROOT+'/seed/metas20261019').set(true); }); } });
     }catch(e){setConn(false);showToast('⚠️ Não foi possível conectar ao Firebase');}
   }
 
@@ -444,16 +452,39 @@
     if(pct<90) return mix('#F97316','#9ae05a',(pct-80)/10);
     return mix('#9ae05a','#22c55e',(pct-90)/10);
   }
-  function paint(p,n,meta,isMoney){
+  function paint(p,n,meta,isMoney,pace){
     var pct=meta>0?n/meta*100:0, pc=Math.min(100,pct);
-    $('q_'+p).style.setProperty('--c','rgb('+colorFor(pc).join(',')+')');
+    var colorPct=pace?Math.min(100,pace.pct):pc;
+    $('q_'+p).style.setProperty('--c','rgb('+colorFor(colorPct).join(',')+')');
+    var mk=$(p+'Proj');
+    if(mk){ if(pace&&meta>0&&pace.proj>0&&pace.proj<meta){mk.style.display='block';mk.style.left=(pace.proj/meta*100)+'%';} else mk.style.display='none'; }
     $(p+'Fill').style.width=pc+'%';
     $(p+'Pct').textContent=(Math.round(pct*10)/10).toLocaleString('pt-BR')+'%';
     $(p+'Val').textContent=brl(n);
     if($(p+'MetaTxt')) $(p+'MetaTxt').textContent=meta>0?brl(meta):'—';
     var mv=document.querySelector('.mv[data-k="'+p+'"]');
     if(!mv.parentElement.querySelector('.minput')){ mv.textContent=meta>0?(isMoney?money(meta):brl(meta)):'definir'; mv.classList.toggle('empty0',!(meta>0)); }
-    $(p+'Rem').innerHTML=!(meta>0)?'Clique em <b>definir</b> para lançar a meta':(n>=meta?'<b>META BATIDA 🎉</b>':('Faltam <b>'+(isMoney?money(meta-n):brl(meta-n))+'</b>'));
+    var fmt=function(v){return isMoney?money(v):brl(v);};
+    var txt=!(meta>0)?'Clique em <b>definir</b> para lançar a meta':(n>=meta?'<b>META BATIDA 🎉</b>':('Faltam <b>'+fmt(meta-n)+'</b>'));
+    if(pace&&meta>0&&n<meta&&pace.proj>0){
+      var ok=n>=pace.proj;
+      txt='Projeção '+pace.lbl+': <b>'+fmt(pace.proj)+'</b> · '+(ok?'<b style="color:#4ade80">✓ no ritmo</b>':'<b style="color:#ff8a7a">abaixo '+fmt(pace.proj-n)+'</b>')+' &nbsp;·&nbsp; '+txt;
+    }
+    $(p+'Rem').innerHTML=txt;
+  }
+
+  // ---- projeção diária: meta do dia (ou meta da semana ÷ 5 em dias úteis) acumulada ----
+  function dayMeta(dk,k,wkMeta){var v=+((M.d[dk]||{})[k]); if(v>0) return v;
+    var wd=fromKey(dk).getDay(); return (wd>=1&&wd<=5&&wkMeta>0)?wkMeta/5:0;}
+  function pace(wk,k,wkMeta,weekActual,todayActual){
+    var c=cur(), s0=fromKey(wk), closed=0, todayM=0, hasToday=false;
+    for(var i=0;i<7;i++){var dk=key(addDays(s0,i)); var m=dayMeta(dk,k,wkMeta);
+      if(dk<c.dk) closed+=m; else if(dk===c.dk){hasToday=true;todayM=m;} }
+    // dias fechados contam inteiros; o dia de hoje entra conforme é realizado (não pesa contra antes de fechar)
+    var proj=closed+(hasToday?Math.min(todayActual,todayM):0);
+    var lbl=hasToday?'até agora':'da semana';
+    if(proj<=0&&hasToday){proj=todayM;lbl='de hoje';}
+    return {proj:proj,pct:proj>0?weekActual/proj*100:0,lbl:lbl};
   }
 
   function lastDayWithData(wk){var best=null;sales.concat(aber).forEach(function(r){if(r._wk===wk&&(!best||r._dk>best))best=r._dk;});return best||wk;}
@@ -473,8 +504,10 @@
     var mw=M.w[selWk]||{}, md=M.d[selDk]||{};
     var vs=sumV(function(s){return s._wk===selWk;}), vd=sumV(function(s){return s._dk===selDk&&!s.soSemana;});
     var as_=sumA(function(a){return a._wk===selWk;}), ad=sumA(function(a){return a._dk===selDk&&!a.soSemana;});
-    paint('vs',vs,+mw.vs||0,true); paint('vd',vd,+md.vd||0,true);
-    paint('as',as_,+mw.as||0,false); paint('ad',ad,+md.ad||0,false);
+    var c0=cur(), mvs=+mw.vs||0, mas=+mw.as||0;
+    var vToday=sumV(function(s){return s._dk===c0.dk&&!s.soSemana;}), aToday=sumA(function(a){return a._dk===c0.dk&&!a.soSemana;});
+    paint('vs',vs,mvs,true,pace(selWk,'vd',mvs,vs,vToday)); paint('vd',vd,dayMeta(selDk,'vd',mvs),true);
+    paint('as',as_,mas,false,pace(selWk,'ad',mas,as_,aToday)); paint('ad',ad,dayMeta(selDk,'ad',mas),false);
     $('hCount').textContent=sales.filter(function(s){return s._wk===selWk;}).length; $('hLan').textContent=as_;
 
     var ws=fromKey(selWk), we=addDays(ws,6), ds=fromKey(selDk);
@@ -507,7 +540,7 @@
   function metaPath(k){return (k==='vs'||k==='as')?('w/'+selWk+'/'+k):('d/'+selDk+'/'+k);}
   function startEdit(el){
     var k=el.getAttribute('data-k'), wrap=el.parentElement;
-    var curM=(k==='vs'||k==='as')?((M.w[selWk]||{})[k]):((M.d[selDk]||{})[k]);
+    var curM=(k==='vs'||k==='as')?((M.w[selWk]||{})[k]):dayMeta(selDk,k,+((M.w[selWk]||{})[k==='vd'?'vs':'as'])||0);
     var input=document.createElement('input'); input.type='text'; input.inputMode='decimal'; input.className='minput';
     input.value=curM>0?brl(curM):''; el.style.display='none'; wrap.appendChild(input); input.focus(); input.select();
     var done=false;
