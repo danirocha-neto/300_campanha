@@ -256,6 +256,13 @@
   .onlywk span{color:var(--muted);font-weight:600}
   .wkchip{font-size:10px;font-weight:800;text-transform:uppercase;padding:2px 7px;border-radius:999px;margin-left:6px;background:rgba(255,255,255,.08);color:#fff}
   .q .projmk{display:none;position:absolute;top:-2px;bottom:-2px;width:4px;margin-left:-2px;background:#fff;border-radius:2px;z-index:3;box-shadow:0 0 8px rgba(255,255,255,.8)}
+  .eyebtn{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;cursor:pointer;font-size:clamp(14px,1.2vw,20px);line-height:1;padding:5px 8px;margin-left:8px;align-self:center}
+  .eyebtn:hover{color:#fff;border-color:rgba(255,255,255,.4)}
+  .q .pctv{display:none}
+  .q.hidev .big .moneyv{display:none}
+  .q.hidev .big .pctv{display:inline}
+  .q.hidev .rem{visibility:hidden}
+  .q.hidev .mv{cursor:default;border-bottom-color:transparent;letter-spacing:3px}
   .whenbox{background:#0e0e13;border:1px dashed var(--line);border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:14px}
   .whenbox b{color:#fff}
   .tvmode .tabsbar{display:none}
@@ -281,8 +288,8 @@
     <div class="col">
     <section class="q" id="q_vs">
       <div class="top"><div class="tt"><span class="ttl">📈 Vendas da semana</span><span class="since" id="vsSince"></span></div>
-        <span class="mline"><span class="lbl">Meta</span><span class="mv" data-k="vs" title="Clique para editar">—</span></span></div>
-      <div class="big"><span class="cur">R$</span><span id="vsVal">0</span></div>
+        <span class="mline"><span class="lbl">Meta</span><span class="mv" data-k="vs" title="Clique para editar">—</span><button class="eyebtn" id="eyeVs" title="Ocultar/mostrar valores">👁</button></span></div>
+      <div class="big"><span class="moneyv"><span class="cur">R$</span><span id="vsVal">0</span></span><span class="pctv" id="vsBigPct">0%</span></div>
       <div class="barwrap"><div class="bar2"><div class="fill2" id="vsFill"></div><span class="pt" id="vsPct">0%</span><i class="projmk" id="vsProj"></i></div>
         <div class="rem" id="vsRem">—</div></div>
     </section>
@@ -412,7 +419,7 @@
   function fromKey(k){var p=k.split('-');return new Date(+p[0],+p[1]-1,+p[2],9,0,0,0);}
   function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
 
-  var sales=[], aber=[], M={w:{},d:{}};
+  var sales=[], aber=[], M={w:{},d:{}}, hideVs=false;
   var selWk=null, selDk=null, lastCurWk=null, lastCurDk=null;
   var fb={};
 
@@ -431,6 +438,8 @@
       db.ref(ROOT+'/seed/ab20261019').on('value',function(s){ if(s.val()!==true){
         fb.ab.child('seed-20261019').set({id:'seed-20261019',qtd:53,ts:new Date(2026,9,19,12,0,0,0).getTime()});
         db.ref(ROOT+'/seed/ab20261019').set(true); } });
+      db.ref(ROOT+'/ocultarVendasSemana').on('value',function(s){hideVs=s.val()===true;render();});
+      fb.hide=db.ref(ROOT+'/ocultarVendasSemana');
       var seededMetas=false;
       fb.metas.on('value',function(s){var v=s.val()||{};M={w:v.w||{},d:v.d||{}};render();
         if(!seededMetas){seededMetas=true;
@@ -506,6 +515,9 @@
     var c0=cur(), mvs=+mw.vs||0, mas=+mw.as||0;
     var vToday=sumV(function(s){return s._dk===c0.dk&&!s.soSemana;}), aToday=sumA(function(a){return a._dk===c0.dk&&!a.soSemana;});
     paint('vs',vs,mvs,true,pace(selWk,'vd',mvs,vs,vToday)); paint('vd',vd,dayMeta(selDk,'vd',mvs),true);
+    var qv=$('q_vs'); qv.classList.toggle('hidev',hideVs); $('eyeVs').textContent=hideVs?'🙈':'👁';
+    $('vsBigPct').textContent=$('vsPct').textContent;
+    if(hideVs){var mvv=document.querySelector('.mv[data-k="vs"]'); if(mvv) mvv.textContent='••••••';}
     paint('as',as_,mas,false,pace(selWk,'ad',mas,as_,aToday)); paint('ad',ad,dayMeta(selDk,'ad',mas),false);
     $('hCount').textContent=sales.filter(function(s){return s._wk===selWk;}).length; $('hLan').textContent=as_;
 
@@ -539,6 +551,7 @@
   function metaPath(k){return (k==='vs'||k==='as')?('w/'+selWk+'/'+k):('d/'+selDk+'/'+k);}
   function startEdit(el){
     var k=el.getAttribute('data-k'), wrap=el.parentElement;
+    if(k==='vs'&&hideVs){showToast('👁 Mostre os valores para editar a meta');return;}
     var curM=(k==='vs'||k==='as')?((M.w[selWk]||{})[k]):dayMeta(selDk,k,+((M.w[selWk]||{})[k==='vd'?'vs':'as'])||0);
     var input=document.createElement('input'); input.type='text'; input.inputMode='decimal'; input.className='minput';
     input.value=curM>0?brl(curM):''; el.style.display='none'; wrap.appendChild(input); input.focus(); input.select();
@@ -659,6 +672,7 @@
   $('btnAbList').addEventListener('click',function(){renderAbList();$('ovAbList').classList.add('on');});
   $('abListClose').addEventListener('click',function(){$('ovAbList').classList.remove('on');});
   $('ovAbList').addEventListener('click',function(e){if(e.target===this)this.classList.remove('on');});
+  $('eyeVs').addEventListener('click',function(e){e.stopPropagation(); hideVs=!hideVs; if(fb.hide)fb.hide.set(hideVs); render();});
   $('btnTV').addEventListener('click',function(){document.body.classList.toggle('tvmode');});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeAdd();closeHist();closeAb();$('ovAbList').classList.remove('on');}
     var k=(e.key||'').toLowerCase(), tag=document.activeElement.tagName;
