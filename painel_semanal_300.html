@@ -480,10 +480,9 @@
     var c=cur(), s0=fromKey(wk), closed=0, todayM=0, hasToday=false;
     for(var i=0;i<7;i++){var dk=key(addDays(s0,i)); var m=dayMeta(dk,k,wkMeta);
       if(dk<c.dk) closed+=m; else if(dk===c.dk){hasToday=true;todayM=m;} }
-    // dias fechados contam inteiros; o dia de hoje entra conforme é realizado (não pesa contra antes de fechar)
-    var proj=closed+(hasToday?Math.min(todayActual,todayM):0);
-    var lbl=hasToday?'até agora':'da semana';
-    if(proj<=0&&hasToday){proj=todayM;lbl='de hoje';}
+    // projeção = metas de todos os dias até hoje, contando o dia de hoje inteiro
+    var proj=closed+(hasToday?todayM:0);
+    var lbl=hasToday?'até hoje':'da semana';
     return {proj:proj,pct:proj>0?weekActual/proj*100:0,lbl:lbl};
   }
 
