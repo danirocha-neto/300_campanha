@@ -1269,13 +1269,18 @@ function renderM(){
   // resumo geral (todas as marcas)
   const sumEl = document.getElementById('m-summary');
   if (V.t === 'all') {
-    // tripulação: QLP definido de cada marca + vendedores multimarca das marcas com QLP definido 0
-    const t = R.tot, sug = t.def + R.sellers.length, need = t.need, dif = sug - need;
-    const partes = `${nf(t.def, 0)} ${t.def === 1 ? 'dedicado' : 'dedicados'} + ${nf(R.sellers.length, 0)} multimarca`;
+    // tripulação: soma do QLP sugerido de cada squad (marcas sem squad não entram)
+    const SQ = squadData(R);
+    const inSq = new Set(state.squads.flatMap(x => x.marcas));
+    const nFree = R.rows.filter(r => !inSq.has(r.n)).length;
+    const sug = SQ.reduce((a, x) => a + x.S.qlp, 0), need = SQ.reduce((a, x) => a + x.S.need, 0), dif = sug - need;
+    const partes = SQ.length
+      ? `Soma do QLP sugerido de ${nf(SQ.length, 0)} ${SQ.length === 1 ? 'squad' : 'squads'}${nFree ? `. ${nf(nFree, 0)} ${nFree === 1 ? 'marca ainda sem squad não entra' : 'marcas ainda sem squad não entram'}` : ''}`
+      : 'Monte squads para calcular a tripulação';
     sumEl.hidden = false;
     sumEl.innerHTML = `<p class="qrow-t">Resumo da tripulação</p><div class="qcells">
       <div class="qc calc out-key"><span class="qc-l">Tripulação sugerida</span><span class="qc-n">${nf(sug, 0)}</span><span class="qc-f">${partes}</span></div>
-      <div class="qc calc"><span class="qc-l">Vendedores necessários</span><span class="qc-n">${f2(need)}</span><span class="qc-f">Conta exata, sem arredondar</span></div>
+      <div class="qc calc"><span class="qc-l">Vendedores necessários</span><span class="qc-n">${f2(need)}</span><span class="qc-f">Marcas dos squads, conta exata sem arredondar</span></div>
       <div class="qc calc"><span class="qc-l">Diferença</span><span class="qc-n">${dif > 0.005 ? '+' : dif < -0.005 ? '−' : ''}${f2(Math.abs(dif))}</span><span class="qc-f">${Math.abs(dif) <= 0.005 ? 'Sugerido igual ao necessário' : dif > 0 ? 'Folga da tripulação sugerida sobre o necessário' : 'Tripulação sugerida abaixo do necessário'}</span></div>
     </div>`;
   } else { sumEl.hidden = true; sumEl.innerHTML = ''; }
