@@ -1192,7 +1192,7 @@ function buildM(){
   const rEl = document.querySelector('input[data-mkr]');
   rEl.addEventListener('input', () => { state.mk.ratio = rEl.value === '' ? 0 : parseFloat(rEl.value); save(); renderM(); });
   const absEl = document.getElementById('m-absin');
-  absEl.innerHTML = `<span><b>Absenteísmo (faltas + férias)</b> usado na folga da tripulação:</span>${state.abs.meses.map((m, i) => `<label>${esc(m.n)} <input type="number" min="0" max="99" step="any" data-abs="${i}" aria-label="Absenteísmo de ${esc(m.n)} em porcentagem"> %</label>`).join('')}<span>Média <b data-o="abs-media"></b></span>`;
+  absEl.innerHTML = `<span><b>Absenteísmo (faltas)</b> usado na folga da tripulação:</span>${state.abs.meses.map((m, i) => `<label>${esc(m.n)} <input type="number" min="0" max="99" step="any" data-abs="${i}" aria-label="Absenteísmo de ${esc(m.n)} em porcentagem"> %</label>`).join('')}<span>Média <b data-o="abs-media"></b></span>`;
   absEl.querySelectorAll('input[data-abs]').forEach(el => {
     el.addEventListener('input', () => { state.abs.meses[+el.dataset.abs].v = el.value === '' ? 0 : parseFloat(el.value); save(); renderM(); });
   });
@@ -1295,7 +1295,7 @@ function renderM(){
     const inSq = new Set(state.squads.flatMap(x => x.marcas));
     const nFree = R.rows.filter(r => !inSq.has(r.n)).length;
     const base = SQ.reduce((a, x) => a + x.S.qlp, 0), need = SQ.reduce((a, x) => a + x.S.need, 0), dif = base - need;
-    // folga para absenteísmo: vendedores a mais para que, descontada a média de faltas e férias, a base continue completa
+    // folga para absenteísmo: vendedores a mais para que, descontada a média de faltas, a base continue completa
     const A = absCalc(base);
     const sug = base + A.extra;
     const partes = SQ.length
@@ -1306,7 +1306,7 @@ function renderM(){
       <div class="qc calc out-key"><span class="qc-l">Tripulação sugerida</span><span class="qc-n">${nf(sug, 0)}</span><span class="qc-f">${partes}</span></div>
       <div class="qc calc"><span class="qc-l">Vendedores necessários</span><span class="qc-n">${f2(need)}</span><span class="qc-f">Marcas dos squads, conta exata sem arredondar</span></div>
       <div class="qc calc"><span class="qc-l">Diferença</span><span class="qc-n">${dif > 0.005 ? '+' : dif < -0.005 ? '−' : ''}${f2(Math.abs(dif))}</span><span class="qc-f">${Math.abs(dif) <= 0.005 ? 'QLP dos squads igual ao necessário' : dif > 0 ? 'Folga do QLP dos squads sobre o necessário, sem contar o absenteísmo' : 'QLP dos squads abaixo do necessário'}</span></div>
-      <div class="qc calc"><span class="qc-l">Folga para absenteísmo</span><span class="qc-n">+${nf(A.extra, 0)}</span><span class="qc-f">${A.media > 0 && base > 0 ? `Média de ${nf(A.media, 2)}% de faltas e férias nos últimos ${nf(A.n, 0)} meses. ${nf(base, 0)} ÷ (1 − ${nf(A.media, 2)}%) = ${f2(A.bruto)}, arredondado para ${nf(base + A.extra, 0)}` : 'Informe o absenteísmo dos últimos meses abaixo'}</span></div>
+      <div class="qc calc"><span class="qc-l">Folga para absenteísmo</span><span class="qc-n">+${nf(A.extra, 0)}</span><span class="qc-f">${A.media > 0 && base > 0 ? `Média de ${nf(A.media, 2)}% de faltas nos últimos ${nf(A.n, 0)} meses. ${nf(base, 0)} ÷ (1 − ${nf(A.media, 2)}%) = ${f2(A.bruto)}, arredondado para ${nf(base + A.extra, 0)}` : 'Informe o absenteísmo dos últimos meses abaixo'}</span></div>
     </div>`;
   } else { sumEl.hidden = true; sumEl.innerHTML = ''; }
   const absEl = document.getElementById('m-absin');
