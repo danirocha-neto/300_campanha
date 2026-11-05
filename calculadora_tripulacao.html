@@ -371,6 +371,8 @@ button.primary:hover{background:#c40000; border-color:#c40000}
 .sqcalc > summary:focus-visible{outline:2px solid var(--brand); outline-offset:2px; border-radius:6px}
 .sqcalc-h:has(> [hidden]:only-child){display:none}
 .sq-prod{margin-top:22px}
+.mdgrid > .mchart.sqchart .cb-row{flex:0 0 auto; grid-template-columns:minmax(0,260px) 1fr 62px; padding:7px 0}
+.mdgrid > .mchart.sqchart .cb-row[aria-hidden]{padding-top:14px}
 .sq-jump{display:flex; flex-wrap:wrap; gap:8px; margin-top:18px}
 .sq-jump:empty{display:none}
 .sq-jump button{font-size:13.5px; padding:7px 14px; border-radius:999px}
@@ -533,7 +535,6 @@ button:focus-visible{outline:2px solid var(--brand); outline-offset:2px}
     <h2 id="cmp-title">Cenário atual e capacidade instalada, lado a lado</h2>
     <p class="lead">Volume de trabalho e minutos por atividade em cada cenário. A última coluna mostra quanto a capacidade instalada muda em relação ao cenário atual.</p>
     <div class="tscroll"><table class="ct" id="ct"></table></div>
-    <p class="delta" id="delta"></p>
   </section>
 
   <details class="edit-wrap" open>
@@ -905,7 +906,7 @@ function render(){
   const sg = v => (v > 0 ? '+' : v < 0 ? '−' : '') + nf(Math.abs(v), 1);
   const qa = num(state.atual.qual), qi = num(state.ideal.qual);
   const mult = qa > 0 ? ` (${nf(qi / qa, 1)}×)` : '';
-  document.getElementById('delta').innerHTML =
+  if (document.getElementById('delta')) document.getElementById('delta').innerHTML =
     `Em resumo: a capacidade instalada usa <strong>${sg(dMin)} min produtivos</strong> por dia (${sg(dPts)} pontos percentuais), com ${nf(qi,1)} qualificações por dia em vez de ${nf(qa,1)}${mult} e ${nf(i.leads,1)} leads em nutrição em vez de ${nf(a.leads,1)}.`;
 }
 
@@ -1186,6 +1187,22 @@ function buildM(){
   mBuilt = true;
 }
 
+function squadData(R){
+  return state.squads.filter(q => q.marcas.length).map(sq => { const S = calcSquad(sq, R); return { sq, S, Q: calcSqQ(sq, S) }; }).filter(x => x.S.rows.length);
+}
+/* produtividade de cada squad: um vendedor do squad, pela calculadora do squad */
+function sqChart(SQ, meta, metaTxt){
+  const items = SQ.filter(x => x.Q.p);
+  if (!items.length) return '<h4>Produtividade por squad</h4><p class="empty">Monte squads para ver a produtividade de cada um aqui.</p>';
+  const nT = items.reduce((a, x) => a + x.Q.N, 0);
+  const avg = items.reduce((a, x) => a + x.Q.p.pct * x.Q.N, 0) / nT;
+  const pos = v => Math.min(100, Math.max(0, v * 100));
+  const sorted = items.slice().sort((a, b) => b.Q.p.pct - a.Q.p.pct);
+  return `<h4>Produtividade por squad</h4>
+    <ul class="cb-keys"><li><i class="up"></i>Acima da média</li><li><i class="down"></i>Abaixo da média</li><li><i class="ln"></i>Média dos squads ${pf(avg)}%</li><li><i class="ln dash"></i>Meta ${metaTxt}</li></ul>
+    <div class="cb-row" aria-hidden="true"><span></span><div class="cb-track axis"><span class="cb-tag" style="left:${pos(avg)}%">Média</span><span class="cb-tag" style="left:${pos(meta)}%">Meta</span></div><span></span></div>
+    ${sorted.map(x => { const lb = sqTxt(x.sq), pct = x.Q.p.pct; return `<div class="cb-row" title="${esc(lb)}: ${nf(x.Q.N, 0)} ${x.Q.N === 1 ? 'vendedor' : 'vendedores'}"><span class="cb-l">${esc(x.sq.nome)} <span class="sq-br">${esc(sqBrands(x.sq))}</span></span><div class="cb-track" role="img" aria-label="${esc(lb)}: ${pf(pct)}%"><div class="cb-fill ${pct >= avg - 1e-9 ? 'up' : 'down'}" style="width:${pos(pct)}%"></div><span class="cb-avg" style="left:${pos(avg)}%"></span><span class="cb-meta" style="left:${pos(meta)}%"></span></div><span class="cb-v">${pf(pct)}%</span></div>`; }).join('')}`;
+}
 function prList(R, idxs){
   const pr = [];
   idxs.forEach(i => { const r = R.rows[i]; if (r.def > 0 && r.p) pr.push({ who: r.n, sub: '', n: r.def, lig: r.ligDia, qual: r.qualDia, p: r.p }); });
@@ -1252,13 +1269,23 @@ function renderM(){
   // resumo geral (todas as marcas)
   const sumEl = document.getElementById('m-summary');
   if (V.t === 'all') {
-    const t = R.tot, def = t.def + R.sellers.length, sug = t.sug + R.sugSellers.length;
+    // squads: QLP proposto e necessidade da calculadora de cada squad; marcas sem squad: o sugerido de cada uma
+    const SQ = squadData(R);
+    const inSq = new Set(state.squads.flatMap(x => x.marcas));
+    const freeRows = R.rows.filter(r => !inSq.has(r.n));
+    const freeSug = freeRows.reduce((a, r) => a + r.sug, 0) + pack(freeRows.filter(r => r.sugMulti)).length;
+    const sqQlp = SQ.reduce((a, x) => a + x.Q.N, 0);
+    const sug = sqQlp + freeSug;
+    const need = SQ.reduce((a, x) => a + x.Q.need, 0) + freeRows.reduce((a, r) => a + r.need, 0);
+    const dif = sug - need;
+    const partes = [];
+    if (SQ.length) partes.push(`${nf(sqQlp, 0)} nos ${nf(SQ.length, 0)} ${SQ.length === 1 ? 'squad' : 'squads'}`);
+    if (freeRows.length) partes.push(`${nf(freeSug, 0)} para ${nf(freeRows.length, 0)} ${freeRows.length === 1 ? 'marca' : 'marcas'} sem squad`);
     sumEl.hidden = false;
     sumEl.innerHTML = `<p class="qrow-t">Resumo da tripulação</p><div class="qcells">
-      <div class="qc calc out-key"><span class="qc-l">Tripulação definida</span><span class="qc-n">${nf(def, 0)}</span><span class="qc-f">${nf(t.def, 0)} dedicados + ${nf(R.sellers.length, 0)} multimarca</span></div>
-      <div class="qc calc"><span class="qc-l">Tripulação sugerida</span><span class="qc-n">${nf(sug, 0)}</span><span class="qc-f">${nf(t.sug, 0)} dedicados + ${nf(R.sugSellers.length, 0)} multimarca</span></div>
-      <div class="qc calc"><span class="qc-l">Vendedores necessários</span><span class="qc-n">${f2(t.need)}</span><span class="qc-f">Conta exata, sem arredondar</span></div>
-      <div class="qc calc"><span class="qc-l">Diferença definida x sugerida</span><span class="qc-n">${def - sug > 0 ? '+' : def - sug < 0 ? '−' : ''}${nf(Math.abs(def - sug), 0)}</span><span class="qc-f">${def === sug ? 'Igual ao sugerido' : def > sug ? 'Vendedores acima do sugerido' : 'Vendedores abaixo do sugerido'}</span></div>
+      <div class="qc calc out-key"><span class="qc-l">Tripulação sugerida</span><span class="qc-n">${nf(sug, 0)}</span><span class="qc-f">${partes.join(' + ') || 'Sem marcas'}</span></div>
+      <div class="qc calc"><span class="qc-l">Vendedores necessários</span><span class="qc-n">${f2(need)}</span><span class="qc-f">Conta exata, sem arredondar</span></div>
+      <div class="qc calc"><span class="qc-l">Diferença</span><span class="qc-n">${dif > 0.005 ? '+' : dif < -0.005 ? '−' : ''}${f2(Math.abs(dif))}</span><span class="qc-f">${Math.abs(dif) <= 0.005 ? 'Sugerido igual ao necessário' : dif > 0 ? 'Folga da tripulação sugerida sobre o necessário' : 'Tripulação sugerida abaixo do necessário'}</span></div>
     </div>`;
   } else { sumEl.hidden = true; sumEl.innerHTML = ''; }
 
@@ -1334,11 +1361,7 @@ function renderM(){
           <div><dt>Menos produtiva</dt><dd>${esc(sorted[sorted.length - 1].who)}<small>${pf(sorted[sorted.length - 1].p.pct)}%</small></dd></div>
         </dl>
       </article>
-      <div class="mchart">
-        <h4>Marcas acima e abaixo da média</h4>
-        <ul class="cb-keys"><li><i class="up"></i>Acima da média</li><li><i class="down"></i>Abaixo da média</li><li><i class="ln"></i>Média ${pf(avg)}%</li><li><i class="ln dash"></i>Meta ${metaTxt}</li></ul>
-        <div class="cb-row" aria-hidden="true"><span></span><div class="cb-track axis"><span class="cb-tag" style="left:${pos(avg)}%">Média</span><span class="cb-tag" style="left:${pos(meta)}%">Meta</span></div><span></span></div>
-        ${sorted.map(x => `<div class="cb-row" title="${esc(x.sub || x.who)}"><span class="cb-l">${esc(x.who)}</span><div class="cb-track" role="img" aria-label="${esc(x.who)}: ${pf(x.p.pct)}%"><div class="cb-fill ${x.p.pct >= avg - 1e-9 ? 'up' : 'down'}" style="width:${pos(x.p.pct)}%"></div><span class="cb-avg" style="left:${pos(avg)}%"></span><span class="cb-meta" style="left:${pos(meta)}%"></span></div><span class="cb-v">${pf(x.p.pct)}%</span></div>`).join('')}
+      <div class="mchart sqchart">${sqChart(squadData(R), meta, metaTxt)}
       </div></div></div>`;
   } else { ov.hidden = true; ov.innerHTML = ''; }
 
@@ -1525,7 +1548,9 @@ function fillSquad(art, sq, S, Q){
   x('f-tm').textContent = `${brl(v.meta, 0)} ÷ (${nf(Q.qual, 1)} × ${nf(v.convAbertura, 2)}%)`;
   // cada vendedor e linha por vendedor seguem a calculadora do squad
   x('n-cada').textContent = Q.p ? pf(Q.p.pct) + '%' : '–';
-  x('f-cada').textContent = Q.p ? `${nf(Q.ligD / Q.N, 0)} ligações por dia, ${nf(Q.p.leads, 1)} leads em nutrição` : 'Sem QLP proposto';
+  x('f-cada').textContent = Q.p ? `${nf(Q.p.leads, 1)} leads em nutrição por vendedor` : 'Sem QLP proposto';
+  x('n-ligv').textContent = Q.mlig == null ? '–' : nf(Q.mlig, 0);
+  x('f-ligv').textContent = Q.mlig == null ? 'Defina o QLP proposto na calculadora do squad' : `${nf(Q.ligD, 0)} ligações por dia do squad ÷ ${nf(Q.N, 0)} ${Q.N === 1 ? 'vendedor' : 'vendedores'}. Média atual de ${nf(Q.v.mediaAtual, 0)}`;
   const N = Q.N, ok = N > 0;
   const per = (m, d, lbl) => ok ? `${nf(m / N, 1)}<span class="pr">${nf(d / N, 1)} ${lbl}</span>` : '–';
   x('pv-leads').innerHTML = per(v.leads, Q.leadsD, 'leads por dia');
@@ -1602,7 +1627,7 @@ function renderSquads(R, V){
       <div class="qcells sq-kpis">
         <div class="qc calc out-key"><span class="qc-l">QLP sugerido do squad</span><span class="qc-n">${nf(S.qlp, 0)}</span><span class="qc-f">${f2(S.need)} vendedores necessários, arredondado para cima</span></div>
         <div class="qc calc"><span class="qc-l">Com as marcas separadas</span><span class="qc-n">${nf(S.separado, 0)}</span><span class="qc-f">${S.separado - S.qlp > 0 ? `O squad economiza ${nf(S.separado - S.qlp, 0)} ${S.separado - S.qlp === 1 ? 'vendedor' : 'vendedores'}` : 'Sem ganho ao juntar as marcas'}</span></div>
-        <div class="qc calc"><span class="qc-l">QLP definido nas marcas</span><span class="qc-n">${nf(S.def, 0)}</span><span class="qc-f">Soma do QLP definido de cada marca</span></div>
+        <div class="qc calc"><span class="qc-l">Ligações por dia por vendedor</span><span class="qc-n" data-x="n-ligv"></span><span class="qc-f" data-x="f-ligv"></span></div>
         <div class="qc calc"><span class="qc-l">Cada vendedor do squad</span><span class="qc-n" data-x="n-cada"></span><span class="qc-f" data-x="f-cada"></span></div>
       </div>
       <details class="sqcalc" data-sqtog="${esc(sq.id)}"${sq.calcClosed ? '' : ' open'}>
