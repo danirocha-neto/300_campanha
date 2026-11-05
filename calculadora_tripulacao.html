@@ -371,6 +371,10 @@ button.primary:hover{background:#c40000; border-color:#c40000}
 .sqcalc > summary:focus-visible{outline:2px solid var(--brand); outline-offset:2px; border-radius:6px}
 .sqcalc-h:has(> [hidden]:only-child){display:none}
 .sq-prod{margin-top:22px}
+.absin{display:flex; flex-wrap:wrap; align-items:center; gap:8px 18px; margin-top:10px; padding:10px 14px; background:var(--surface); border-radius:10px; font-size:13.5px; color:var(--muted)}
+.absin b{color:var(--ink)}
+.absin label{display:flex; align-items:center; gap:6px; color:var(--ink); font-weight:600}
+.absin input{width:4.6em}
 .mdgrid > .mchart.sqchart .cb-row{flex:0 0 auto; grid-template-columns:minmax(0,260px) 1fr 62px; padding:7px 0}
 .mdgrid > .mchart.sqchart .cb-row[aria-hidden]{padding-top:14px}
 .sq-jump{display:flex; flex-wrap:wrap; gap:8px; margin-top:18px}
@@ -559,6 +563,7 @@ button:focus-visible{outline:2px solid var(--brand); outline-offset:2px}
     <div class="mprem" id="m-note"></div>
     <div id="m-detail" hidden></div>
     <div id="m-summary" class="qrow" hidden></div>
+    <div id="m-absin" class="absin" hidden></div>
     <div id="m-over" hidden></div>
 
     <section class="squads" id="m-squads" aria-labelledby="sq-title" hidden>
@@ -626,6 +631,7 @@ const DEFAULTS = {
 };
 DEFAULTS.qlp = { qlp: 20, dias: 22, metaWeb: 10, cadencia: 8, mediaAtual: 132, metaAbertura: 660, convGeral: 1, convAbertura: 10, ticket: 34000 };
 DEFAULTS.squads = [];
+DEFAULTS.abs = { meses: [ { n: 'Agosto', v: 7.54 }, { n: 'Setembro', v: 8.90 }, { n: 'Outubro', v: 13.03 } ] };
 DEFAULTS.mk = { ratio: 3, filtro: 'todas', list: [
   { n: 'Ecoville', leads: 600, meta: 300000, qlp: 2 },
   { n: 'Fast Tennis', leads: 583, meta: 350000, qlp: 2 },
@@ -669,6 +675,7 @@ if (!state.mk || !Array.isArray(state.mk.list)) state.mk = JSON.parse(JSON.strin
 ['atual', 'ideal'].forEach(k => { if (state[k].adp === undefined) state[k].adp = 15; });
 if (!Array.isArray(state.squads)) state.squads = JSON.parse(JSON.stringify(DEFAULTS.squads));
 delete state.qlp.contato;
+if (!state.abs || !Array.isArray(state.abs.meses)) state.abs = JSON.parse(JSON.stringify(DEFAULTS.abs));
 state.mk.list.forEach(m => { Object.keys(MK_PREM).forEach(k => { if (m[k] === undefined) m[k] = state.qlp[k] !== undefined ? state.qlp[k] : MK_PREM[k]; }); });
 if (typeof state.mk.filtro !== 'string') state.mk.filtro = 'todas';
 function saveLocal(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
@@ -1184,9 +1191,23 @@ function buildM(){
   });
   const rEl = document.querySelector('input[data-mkr]');
   rEl.addEventListener('input', () => { state.mk.ratio = rEl.value === '' ? 0 : parseFloat(rEl.value); save(); renderM(); });
+  const absEl = document.getElementById('m-absin');
+  absEl.innerHTML = `<span><b>Absenteísmo (faltas + férias)</b> usado na folga da tripulação:</span>${state.abs.meses.map((m, i) => `<label>${esc(m.n)} <input type="number" min="0" max="99" step="any" data-abs="${i}" aria-label="Absenteísmo de ${esc(m.n)} em porcentagem"> %</label>`).join('')}<span>Média <b data-o="abs-media"></b></span>`;
+  absEl.querySelectorAll('input[data-abs]').forEach(el => {
+    el.addEventListener('input', () => { state.abs.meses[+el.dataset.abs].v = el.value === '' ? 0 : parseFloat(el.value); save(); renderM(); });
+  });
   mBuilt = true;
 }
 
+function absCalc(base){
+  const ms = (state.abs && state.abs.meses) || [];
+  const vals = ms.map(m => num(m.v));
+  const media = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+  const a = Math.min(media, 95) / 100;
+  const bruto = base > 0 ? base / (1 - a) : 0;
+  const extra = base > 0 ? Math.max(0, Math.ceil(bruto - 1e-9) - base) : 0;
+  return { media, bruto, extra, n: vals.length };
+}
 function squadData(R){
   return state.squads.filter(q => q.marcas.length).map(sq => { const S = calcSquad(sq, R); return { sq, S, Q: calcSqQ(sq, S) }; }).filter(x => x.S.rows.length);
 }
@@ -1273,17 +1294,25 @@ function renderM(){
     const SQ = squadData(R);
     const inSq = new Set(state.squads.flatMap(x => x.marcas));
     const nFree = R.rows.filter(r => !inSq.has(r.n)).length;
-    const sug = SQ.reduce((a, x) => a + x.S.qlp, 0), need = SQ.reduce((a, x) => a + x.S.need, 0), dif = sug - need;
+    const base = SQ.reduce((a, x) => a + x.S.qlp, 0), need = SQ.reduce((a, x) => a + x.S.need, 0), dif = base - need;
+    // folga para absenteísmo: vendedores a mais para que, descontada a média de faltas e férias, a base continue completa
+    const A = absCalc(base);
+    const sug = base + A.extra;
     const partes = SQ.length
-      ? `Soma do QLP sugerido de ${nf(SQ.length, 0)} ${SQ.length === 1 ? 'squad' : 'squads'}${nFree ? `. ${nf(nFree, 0)} ${nFree === 1 ? 'marca ainda sem squad não entra' : 'marcas ainda sem squad não entram'}` : ''}`
+      ? `${nf(base, 0)} QLP dos squads + ${nf(A.extra, 0)} de projeção de absenteísmo${nFree ? `. ${nf(nFree, 0)} ${nFree === 1 ? 'marca ainda sem squad não entra' : 'marcas ainda sem squad não entram'}` : ''}`
       : 'Monte squads para calcular a tripulação';
     sumEl.hidden = false;
     sumEl.innerHTML = `<p class="qrow-t">Resumo da tripulação</p><div class="qcells">
       <div class="qc calc out-key"><span class="qc-l">Tripulação sugerida</span><span class="qc-n">${nf(sug, 0)}</span><span class="qc-f">${partes}</span></div>
       <div class="qc calc"><span class="qc-l">Vendedores necessários</span><span class="qc-n">${f2(need)}</span><span class="qc-f">Marcas dos squads, conta exata sem arredondar</span></div>
-      <div class="qc calc"><span class="qc-l">Diferença</span><span class="qc-n">${dif > 0.005 ? '+' : dif < -0.005 ? '−' : ''}${f2(Math.abs(dif))}</span><span class="qc-f">${Math.abs(dif) <= 0.005 ? 'Sugerido igual ao necessário' : dif > 0 ? 'Folga da tripulação sugerida sobre o necessário' : 'Tripulação sugerida abaixo do necessário'}</span></div>
+      <div class="qc calc"><span class="qc-l">Diferença</span><span class="qc-n">${dif > 0.005 ? '+' : dif < -0.005 ? '−' : ''}${f2(Math.abs(dif))}</span><span class="qc-f">${Math.abs(dif) <= 0.005 ? 'QLP dos squads igual ao necessário' : dif > 0 ? 'Folga do QLP dos squads sobre o necessário, sem contar o absenteísmo' : 'QLP dos squads abaixo do necessário'}</span></div>
+      <div class="qc calc"><span class="qc-l">Folga para absenteísmo</span><span class="qc-n">+${nf(A.extra, 0)}</span><span class="qc-f">${A.media > 0 && base > 0 ? `Média de ${nf(A.media, 2)}% de faltas e férias nos últimos ${nf(A.n, 0)} meses. ${nf(base, 0)} ÷ (1 − ${nf(A.media, 2)}%) = ${f2(A.bruto)}, arredondado para ${nf(base + A.extra, 0)}` : 'Informe o absenteísmo dos últimos meses abaixo'}</span></div>
     </div>`;
   } else { sumEl.hidden = true; sumEl.innerHTML = ''; }
+  const absEl = document.getElementById('m-absin');
+  absEl.hidden = V.t !== 'all';
+  absEl.querySelectorAll('input[data-abs]').forEach(el => { if (el !== document.activeElement) el.value = state.abs.meses[+el.dataset.abs].v; });
+  const absM = absEl.querySelector('[data-o="abs-media"]'); if (absM) absM.textContent = nf(absCalc(0).media, 2) + '%';
 
   // multimarca
   const mm = document.getElementById('m-multi');
@@ -1768,7 +1797,7 @@ render = (orig => function(){ orig(); renderM(); })(render);
 const clone = o => JSON.parse(JSON.stringify(o));
 function sharedOf(s){
   return clone({ g: s.g, atual: s.atual, ideal: s.ideal, qlp: s.qlp, mk: { ratio: s.mk.ratio, list: s.mk.list },
-    squads: s.squads.map(q => { const c = Object.assign({}, q); delete c.calcClosed; return c; }) });
+    squads: s.squads.map(q => { const c = Object.assign({}, q); delete c.calcClosed; return c; }), abs: s.abs });
 }
 function refreshAll(){ build(); render(); buildQ(); renderQ(); buildM(); renderM(); }
 
@@ -1828,6 +1857,7 @@ function diffShared(a, b){
   keys(a.qlp, b.qlp).forEach(k => push(`Calculadora de QLP · ${(Q_FIELDS[k] || [k])[0]}`, (a.qlp || {})[k], (b.qlp || {})[k]));
   const am = a.mk || {}, bm = b.mk || {};
   push('Desqualificações por qualificação', am.ratio, bm.ratio);
+  ((b.abs || {}).meses || []).forEach((m, i) => push(`Absenteísmo · ${m.n} (%)`, (((a.abs || {}).meses || [])[i] || {}).v, m.v));
   (bm.list || []).forEach((m, i) => {
     const o = (am.list || [])[i] || {};
     keys(o, m).filter(k => k !== 'n').forEach(k => push(`${m.n} · ${M_LABEL[k] || k}`, o[k], m[k]));
@@ -1852,6 +1882,7 @@ function normalize(s){
   if (!s.qlp) s.qlp = clone(DEFAULTS.qlp);
   if (!s.mk || !Array.isArray(s.mk.list)) s.mk = clone(DEFAULTS.mk);
   if (!Array.isArray(s.squads)) s.squads = [];
+  if (!s.abs || !Array.isArray(s.abs.meses)) s.abs = clone(DEFAULTS.abs);
   s.squads.forEach(q => { if (!Array.isArray(q.marcas)) q.marcas = []; });
   s.mk.list.forEach(m => { Object.keys(MK_PREM).forEach(k => { if (m[k] === undefined) m[k] = MK_PREM[k]; }); });
   return s;
