@@ -1269,21 +1269,12 @@ function renderM(){
   // resumo geral (todas as marcas)
   const sumEl = document.getElementById('m-summary');
   if (V.t === 'all') {
-    // squads: QLP proposto e necessidade da calculadora de cada squad; marcas sem squad: o sugerido de cada uma
-    const SQ = squadData(R);
-    const inSq = new Set(state.squads.flatMap(x => x.marcas));
-    const freeRows = R.rows.filter(r => !inSq.has(r.n));
-    const freeSug = freeRows.reduce((a, r) => a + r.sug, 0) + pack(freeRows.filter(r => r.sugMulti)).length;
-    const sqQlp = SQ.reduce((a, x) => a + x.Q.N, 0);
-    const sug = sqQlp + freeSug;
-    const need = SQ.reduce((a, x) => a + x.Q.need, 0) + freeRows.reduce((a, r) => a + r.need, 0);
-    const dif = sug - need;
-    const partes = [];
-    if (SQ.length) partes.push(`${nf(sqQlp, 0)} nos ${nf(SQ.length, 0)} ${SQ.length === 1 ? 'squad' : 'squads'}`);
-    if (freeRows.length) partes.push(`${nf(freeSug, 0)} para ${nf(freeRows.length, 0)} ${freeRows.length === 1 ? 'marca' : 'marcas'} sem squad`);
+    // tripulação: QLP definido de cada marca + vendedores multimarca das marcas com QLP definido 0
+    const t = R.tot, sug = t.def + R.sellers.length, need = t.need, dif = sug - need;
+    const partes = `${nf(t.def, 0)} ${t.def === 1 ? 'dedicado' : 'dedicados'} + ${nf(R.sellers.length, 0)} multimarca`;
     sumEl.hidden = false;
     sumEl.innerHTML = `<p class="qrow-t">Resumo da tripulação</p><div class="qcells">
-      <div class="qc calc out-key"><span class="qc-l">Tripulação sugerida</span><span class="qc-n">${nf(sug, 0)}</span><span class="qc-f">${partes.join(' + ') || 'Sem marcas'}</span></div>
+      <div class="qc calc out-key"><span class="qc-l">Tripulação sugerida</span><span class="qc-n">${nf(sug, 0)}</span><span class="qc-f">${partes}</span></div>
       <div class="qc calc"><span class="qc-l">Vendedores necessários</span><span class="qc-n">${f2(need)}</span><span class="qc-f">Conta exata, sem arredondar</span></div>
       <div class="qc calc"><span class="qc-l">Diferença</span><span class="qc-n">${dif > 0.005 ? '+' : dif < -0.005 ? '−' : ''}${f2(Math.abs(dif))}</span><span class="qc-f">${Math.abs(dif) <= 0.005 ? 'Sugerido igual ao necessário' : dif > 0 ? 'Folga da tripulação sugerida sobre o necessário' : 'Tripulação sugerida abaixo do necessário'}</span></div>
     </div>`;
@@ -1357,8 +1348,6 @@ function renderM(){
         <dl class="kstats">
           <div><dt>Acima da média</dt><dd>${up}</dd></div>
           <div><dt>Abaixo da média</dt><dd>${down}</dd></div>
-          <div><dt>Mais produtiva</dt><dd>${esc(sorted[0].who)}<small>${pf(sorted[0].p.pct)}%</small></dd></div>
-          <div><dt>Menos produtiva</dt><dd>${esc(sorted[sorted.length - 1].who)}<small>${pf(sorted[sorted.length - 1].p.pct)}%</small></dd></div>
         </dl>
       </article>
       <div class="mchart sqchart">${sqChart(squadData(R), meta, metaTxt)}
