@@ -371,6 +371,7 @@ button.primary:hover{background:#c40000; border-color:#c40000}
 .sqcalc > summary:focus-visible{outline:2px solid var(--brand); outline-offset:2px; border-radius:6px}
 .sqcalc-h:has(> [hidden]:only-child){display:none}
 .sq-prod{margin-top:22px}
+.scen-sub{margin:-2px 0 10px; font-size:13px; color:var(--muted)}
 .absin{display:flex; flex-wrap:wrap; align-items:center; gap:8px 18px; margin-top:10px; padding:10px 14px; background:var(--surface); border-radius:10px; font-size:13.5px; color:var(--muted)}
 .absin b{color:var(--ink)}
 .absin label{display:flex; align-items:center; gap:6px; color:var(--ink); font-weight:600}
@@ -542,7 +543,7 @@ button:focus-visible{outline:2px solid var(--brand); outline-offset:2px}
     <div class="tscroll"><table class="ct" id="ct"></table></div>
   </section>
 
-  <details class="edit-wrap" open>
+  <details class="edit-wrap">
     <summary><span class="h-closed">Mostrar premissas dos cenários</span><span class="h-open">Ocultar premissas dos cenários</span><small>Campos editáveis do cenário atual e da capacidade instalada</small></summary>
     <section class="editors" id="editors" aria-label="Premissas dos cenários"></section>
   </details>
@@ -579,7 +580,7 @@ button:focus-visible{outline:2px solid var(--brand); outline-offset:2px}
       <div class="sq-list" id="sq-list"></div>
     </section>
 
-    <details class="edit-wrap" id="m-indiv" open>
+    <details class="edit-wrap" id="m-indiv">
       <summary><span class="h-closed">Mostrar visão individual das marcas</span><span class="h-open">Ocultar visão individual das marcas</span><small>QLP, multimarca e produtividade de cada marca</small></summary>
 
     <section aria-labelledby="mt-title">
@@ -1183,6 +1184,14 @@ function buildM(){
   mBuilt = true;
 }
 
+function crewCalc(R){
+  const SQ = squadData(R);
+  const inSq = new Set(state.squads.flatMap(x => x.marcas));
+  const nFree = R.rows.filter(r => !inSq.has(r.n)).length;
+  const base = SQ.reduce((a, x) => a + x.S.qlp, 0), need = SQ.reduce((a, x) => a + x.S.need, 0);
+  const A = absCalc(base);
+  return { SQ, nFree, base, need, A, sug: base + A.extra };
+}
 function absCalc(base){
   const ms = (state.abs && state.abs.meses) || [];
   const vals = ms.map(m => num(m.v));
@@ -1275,13 +1284,9 @@ function renderM(){
   const sumEl = document.getElementById('m-summary');
   if (V.t === 'all') {
     // tripulação: soma do QLP sugerido de cada squad (marcas sem squad não entram)
-    const SQ = squadData(R);
-    const inSq = new Set(state.squads.flatMap(x => x.marcas));
-    const nFree = R.rows.filter(r => !inSq.has(r.n)).length;
-    const base = SQ.reduce((a, x) => a + x.S.qlp, 0), need = SQ.reduce((a, x) => a + x.S.need, 0), dif = base - need;
     // folga para absenteísmo: vendedores a mais para que, descontada a média de faltas, a base continue completa
-    const A = absCalc(base);
-    const sug = base + A.extra;
+    const { SQ, nFree, base, need, A, sug } = crewCalc(R);
+    const dif = base - need;
     const partes = SQ.length
       ? `${nf(base, 0)} QLP dos squads + ${nf(A.extra, 0)} de projeção de absenteísmo${nFree ? `. ${nf(nFree, 0)} ${nFree === 1 ? 'marca ainda sem squad não entra' : 'marcas ainda sem squad não entram'}` : ''}`
       : 'Monte squads para calcular a tripulação';
@@ -1345,12 +1350,14 @@ function renderM(){
 
   // visão do time ou do squad
   const ov = document.getElementById('m-over');
-  if (V.t === 'all' && pr.length) {
-    const nT = pr.reduce((a, x) => a + x.n, 0);
-    const avg = pr.reduce((a, x) => a + x.p.pct * x.n, 0) / nT;
-    const sorted = pr.filter(x => !x.sub).sort((a, b) => b.p.pct - a.p.pct);
-    const up = sorted.filter(x => x.p.pct >= avg - 1e-9).length, down = sorted.length - up;
-    const hit = sorted.filter(x => x.p.pct + 1e-9 >= meta).length;
+  if (V.t === 'all') {
+    // média do time = média dos squads, ponderada pelos vendedores de cada squad
+    const sqItems = squadData(R).filter(x => x.Q.p);
+    const nT = sqItems.reduce((a, x) => a + x.Q.N, 0);
+    const avg = nT > 0 ? sqItems.reduce((a, x) => a + x.Q.p.pct * x.Q.N, 0) / nT : 0;
+    const up = sqItems.filter(x => x.Q.p.pct >= avg - 1e-9).length, down = sqItems.length - up;
+    const hit = sqItems.filter(x => x.Q.p.pct + 1e-9 >= meta).length;
+    const C = crewCalc(R);
     const pos = v => Math.min(100, Math.max(0, v * 100));
     const metaTxt = nf(num(g.meta), 1) + '%';
     const quem = isSq ? 'do squad' : 'do time';
@@ -1358,11 +1365,12 @@ function renderM(){
     ov.hidden = false;
     ov.innerHTML = `<div class="qrow"><p class="qrow-t">Produtividade ${isSq ? 'do squad ' + esc(sqTxt(V.sq)) : 'do time'}</p><div class="mdgrid">
       <article class="kpi kpi-ideal">
-        <p class="scen-name">Média ${quem}, ponderada por ${nf(nT, 0)} vendedores</p>
+        <p class="scen-name">Média do time, tripulação sugerida de ${nf(C.sug, 0)} vendedores</p>
+        <p class="scen-sub">${sqItems.length ? `Calculada sobre os ${nf(nT, 0)} vendedores em atividade nos squads${C.A.extra ? `; os ${nf(C.A.extra, 0)} da folga para absenteísmo cobrem as faltas` : ''}.` : 'Monte squads para calcular a produtividade do time.'}</p>
         <p class="scen-pct">${pf(avg)}<small>%</small></p>
         <div class="prog"><div class="prog-fill" style="width:${pos(avg)}%"></div><div class="prog-meta" style="left:${pos(meta)}%"><span>Meta ${metaTxt}</span></div></div>
         <div class="scale"><span>0%</span><span>100% da jornada</span></div>
-        <p class="scen-status">${up} ${up === 1 ? 'marca está' : 'marcas estão'} acima da média e ${down} abaixo. <strong>${hit ? `${hit} ${hit === 1 ? 'atinge' : 'atingem'} a meta de ${metaTxt}.` : `Nenhuma atinge a meta de ${metaTxt}.`}</strong> ${fim}</p>
+        <p class="scen-status">${sqItems.length ? `${up} ${up === 1 ? 'squad está' : 'squads estão'} acima da média e ${down} abaixo. <strong>${hit ? `${hit} ${hit === 1 ? 'atinge' : 'atingem'} a meta de ${metaTxt}.` : `Nenhum squad atinge a meta de ${metaTxt}.`}</strong> ${fim}` : ''}</p>
         <dl class="kstats">
           <div><dt>Acima da média</dt><dd>${up}</dd></div>
           <div><dt>Abaixo da média</dt><dd>${down}</dd></div>
@@ -1463,6 +1471,7 @@ function moveBrand(n, to){
   if (to !== 'pool') state.squads.find(x => x.id === to).marcas.push(n);
   sqMsg = ''; save(); refreshM();
 }
+const sqOpen = new Set(); // abertos só nesta visita: ao abrir a página, tudo começa fechado
 function calcSquad(sq, R){
   const rows = sq.marcas.map(n => R.rows.find(r => r.n === n)).filter(Boolean);
   const sum = f => rows.reduce((a, r) => a + r[f], 0);
@@ -1638,7 +1647,7 @@ function renderSquads(R, V){
         <div class="qc calc"><span class="qc-l">Ligações por dia por vendedor</span><span class="qc-n" data-x="n-ligv"></span><span class="qc-f" data-x="f-ligv"></span></div>
         <div class="qc calc"><span class="qc-l">Cada vendedor do squad</span><span class="qc-n" data-x="n-cada"></span><span class="qc-f" data-x="f-cada"></span></div>
       </div>
-      <details class="sqcalc" data-sqtog="${esc(sq.id)}"${sq.calcClosed ? '' : ' open'}>
+      <details class="sqcalc" data-sqtog="${esc(sq.id)}"${sqOpen.has(sq.id) ? ' open' : ''}>
         <summary><span>Calculadora de QLP do squad</span><small>Projetada a partir das marcas; o que você alterar aqui vale só para este squad</small></summary>
         <div class="sqcalc-h"><button type="button" class="sq-del" data-sqreset="${esc(sq.id)}" data-x="sqreset" hidden>Voltar aos dados das marcas</button></div>
         <div class="qrow"><p class="qrow-t">Premissas do squad</p><div class="qcells">
@@ -1751,7 +1760,7 @@ function fillCmp(el, pr){
   });
   box.addEventListener('toggle', e => {
     const d = e.target; if (!d.matches || !d.matches('details[data-sqtog]')) return;
-    const sq = state.squads.find(x => x.id === d.dataset.sqtog); if (sq) { sq.calcClosed = !d.open; save(); }
+    if (d.open) sqOpen.add(d.dataset.sqtog); else sqOpen.delete(d.dataset.sqtog);
   }, true);
   box.addEventListener('dragstart', e => { const c = e.target.closest('.chip'); if (c) { e.dataTransfer.setData('text/plain', c.dataset.brand); e.dataTransfer.effectAllowed = 'move'; } });
   box.addEventListener('dragover', e => { const d = e.target.closest('[data-drop]'); if (d) { e.preventDefault(); d.classList.add('drop-on'); } });
