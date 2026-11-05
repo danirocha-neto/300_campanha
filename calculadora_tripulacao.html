@@ -375,7 +375,8 @@ button.primary:hover{background:#c40000; border-color:#c40000}
 .absin b{color:var(--ink)}
 .absin label{display:flex; align-items:center; gap:6px; color:var(--ink); font-weight:600}
 .absin input{width:4.6em}
-.mdgrid > .mchart.sqchart .cb-row{flex:0 0 auto; grid-template-columns:minmax(0,260px) 1fr 62px; padding:7px 0}
+.mdgrid > .mchart.sqchart .cb-row{flex:0 0 auto; grid-template-columns:minmax(0,230px) 1fr 150px; padding:7px 0}
+.sqchart .cb-v small{font-weight:500; color:var(--muted); font-size:12.5px}
 .mdgrid > .mchart.sqchart .cb-row[aria-hidden]{padding-top:14px}
 .sq-jump{display:flex; flex-wrap:wrap; gap:8px; margin-top:18px}
 .sq-jump:empty{display:none}
@@ -559,7 +560,6 @@ button:focus-visible{outline:2px solid var(--brand); outline-offset:2px}
       <label class="mfilter"><span id="m-filter-l">Ver marca</span><select id="m-filter"></select></label>
     </div>
     <div class="mctx" id="m-ctx"></div>
-    <nav class="sq-jump" id="sq-jump" aria-label="Atalhos para os squads"></nav>
     <div class="mprem" id="m-note"></div>
     <div id="m-detail" hidden></div>
     <div id="m-summary" class="qrow" hidden></div>
@@ -570,7 +570,7 @@ button:focus-visible{outline:2px solid var(--brand); outline-offset:2px}
       <div class="sq-head">
         <div>
           <h3 class="qsub" id="sq-title">Squads</h3>
-          <p class="lead">Monte squads de 1 a 5 marcas arrastando as marcas para dentro deles. O QLP sugerido do squad soma a necessidade das marcas e arredonda para cima; a distribuição indica quais marcas ficam com vendedor dedicado e quais dividem vendedor.</p>
+          <p class="lead">Monte squads de 1 a 5 marcas: clique em <b>Novo squad</b> e adicione as marcas pela lista. O QLP sugerido do squad soma a necessidade das marcas e arredonda para cima; a distribuição indica quais marcas ficam com vendedor dedicado e quais dividem vendedor. Para ver e editar um squad, escolha-o em <b>Ver squad</b>, no topo.</p>
         </div>
         <button type="button" class="primary" id="sq-add">+ Novo squad</button>
       </div>
@@ -1057,7 +1057,7 @@ function mView(){
   const f = state.mk.filtro || 'todas', list = state.mk.list;
   if (f.startsWith('sq:')) {
     const sq = state.squads.find(x => 'sq:' + x.id === f);
-    if (sq && sq.marcas.length) return { t: 'sq', sq, idxs: sq.marcas.map(n => list.findIndex(m => m.n === n)).filter(i => i >= 0) };
+    if (sq) return { t: 'sq', sq, idxs: sq.marcas.map(n => list.findIndex(m => m.n === n)).filter(i => i >= 0) };
   }
   return { t: 'all', idxs: list.map((_, i) => i) };
 }
@@ -1074,25 +1074,9 @@ const mInT = (i, f, cls = '') => {
   return m ? `<span class="money"><span class="cur">R$</span>${inp}</span>` : inp;
 };
 
-function buildJump(){
-  const nav = document.getElementById('sq-jump');
-  if (!nav) return;
-  const V = mView();
-  if (V.t === 'one') { nav.innerHTML = ''; return; }
-  const list = V.t === 'sq' ? [V.sq] : state.squads;
-  nav.innerHTML = `<button type="button" class="primary" data-jump="m-squads">${V.t === 'sq' ? 'Ir para o squad' : 'Ir para os squads'} ↓</button>`
-    + (V.t === 'all' ? list.map(q => `<button type="button" data-jump="sq:${esc(q.id)}"><span data-sqnm="${esc(q.id)}">${esc(q.nome)}</span> <span class="sq-br">${esc(sqBrands(q))}</span></button>`).join('') : '');
-}
-document.getElementById('sq-jump').addEventListener('click', e => {
-  const b = e.target.closest('button[data-jump]'); if (!b) return;
-  const j = b.dataset.jump;
-  const el = j.startsWith('sq:') ? document.querySelector(`#sq-list article[data-sq="${CSS.escape(j.slice(3))}"]`) : document.getElementById(j);
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-});
 function buildFilter(){
-  buildJump();
   const sel = document.getElementById('m-filter');
-  const sqs = state.squads.filter(x => x.marcas.length);
+  const sqs = state.squads;
   sel.innerHTML = `<option value="todas">Todas as marcas</option>`
     + (sqs.length ? `<optgroup label="Squads">${sqs.map(x => `<option value="sq:${esc(x.id)}">${esc(sqTxt(x))}</option>`).join('')}</optgroup>` : '');
   sel.value = state.mk.filtro;
@@ -1222,7 +1206,7 @@ function sqChart(SQ, meta, metaTxt){
   return `<h4>Produtividade por squad</h4>
     <ul class="cb-keys"><li><i class="up"></i>Acima da média</li><li><i class="down"></i>Abaixo da média</li><li><i class="ln"></i>Média dos squads ${pf(avg)}%</li><li><i class="ln dash"></i>Meta ${metaTxt}</li></ul>
     <div class="cb-row" aria-hidden="true"><span></span><div class="cb-track axis"><span class="cb-tag" style="left:${pos(avg)}%">Média</span><span class="cb-tag" style="left:${pos(meta)}%">Meta</span></div><span></span></div>
-    ${sorted.map(x => { const lb = sqTxt(x.sq), pct = x.Q.p.pct; return `<div class="cb-row" title="${esc(lb)}: ${nf(x.Q.N, 0)} ${x.Q.N === 1 ? 'vendedor' : 'vendedores'}"><span class="cb-l">${esc(x.sq.nome)} <span class="sq-br">${esc(sqBrands(x.sq))}</span></span><div class="cb-track" role="img" aria-label="${esc(lb)}: ${pf(pct)}%"><div class="cb-fill ${pct >= avg - 1e-9 ? 'up' : 'down'}" style="width:${pos(pct)}%"></div><span class="cb-avg" style="left:${pos(avg)}%"></span><span class="cb-meta" style="left:${pos(meta)}%"></span></div><span class="cb-v">${pf(pct)}%</span></div>`; }).join('')}`;
+    ${sorted.map(x => { const lb = sqTxt(x.sq), pct = x.Q.p.pct; return `<div class="cb-row" title="${esc(lb)}: ${nf(x.Q.N, 0)} ${x.Q.N === 1 ? 'vendedor' : 'vendedores'}"><span class="cb-l">${esc(x.sq.nome)} <span class="sq-br">${esc(sqBrands(x.sq))}</span></span><div class="cb-track" role="img" aria-label="${esc(lb)}: ${pf(pct)}%"><div class="cb-fill ${pct >= avg - 1e-9 ? 'up' : 'down'}" style="width:${pos(pct)}%"></div><span class="cb-avg" style="left:${pos(avg)}%"></span><span class="cb-meta" style="left:${pos(meta)}%"></span></div><span class="cb-v">${pf(pct)}% <small>(${nf(x.Q.N, 0)} ${x.Q.N === 1 ? 'vendedor' : 'vendedores'})</small></span></div>`; }).join('')}`;
 }
 function prList(R, idxs){
   const pr = [];
@@ -1389,7 +1373,7 @@ function renderM(){
   } else { ov.hidden = true; ov.innerHTML = ''; }
 
   renderSquads(R, V);
-  document.getElementById('m-indiv').hidden = isSq;
+  document.getElementById('m-indiv').hidden = true;
 
   // calculadora da marca
   if (one >= 0) {
@@ -1637,6 +1621,7 @@ function renderSquads(R, V){
   const isSq = V.t === 'sq';
   box.querySelector('.sq-head').hidden = isSq;
   box.querySelector('.sq-pool').hidden = isSq;
+  document.getElementById('sq-list').hidden = !isSq;
   const inSq = new Set(state.squads.flatMap(x => x.marcas));
   const free = R.rows.filter(r => !inSq.has(r.n));
   const chip = (r, rm) => `<span class="chip" draggable="true" data-brand="${esc(r.n)}" title="Arraste para um squad">${esc(r.n)}<span class="nd">${f2(r.need)}</span>${rm ? `<button type="button" data-sqr="${esc(r.n)}" aria-label="Tirar ${esc(r.n)} do squad">×</button>` : ''}</span>`;
@@ -1734,10 +1719,13 @@ function fillCmp(el, pr){
   box.addEventListener('click', e => {
     const t = e.target.closest('button'); if (!t) return;
     if (t.id === 'sq-add') {
-      state.squads.push({ id: 's' + Date.now().toString(36), nome: `Squad ${state.squads.length + 1}`, marcas: [] });
+      const id = 's' + Date.now().toString(36);
+      state.squads.push({ id, nome: `Squad ${state.squads.length + 1}`, marcas: [] });
+      state.mk.filtro = 'sq:' + id;
       sqMsg = ''; save(); refreshM();
+      box.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else if (t.dataset.sqd) {
-      state.squads = state.squads.filter(x => x.id !== t.dataset.sqd); sqMsg = ''; save(); refreshM();
+      state.squads = state.squads.filter(x => x.id !== t.dataset.sqd); state.mk.filtro = 'todas'; sqMsg = ''; save(); refreshM();
     } else if (t.dataset.sqr) moveBrand(t.dataset.sqr, 'pool');
     else if (t.dataset.sqreset) {
       const sq = state.squads.find(x => x.id === t.dataset.sqreset);
