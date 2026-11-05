@@ -371,6 +371,10 @@ button.primary:hover{background:#c40000; border-color:#c40000}
 .sqcalc > summary:focus-visible{outline:2px solid var(--brand); outline-offset:2px; border-radius:6px}
 .sqcalc-h:has(> [hidden]:only-child){display:none}
 .sq-prod{margin-top:22px}
+.sq-jump{display:flex; flex-wrap:wrap; gap:8px; margin-top:18px}
+.sq-jump:empty{display:none}
+.sq-jump button{font-size:13.5px; padding:7px 14px; border-radius:999px}
+.squads,.squad{scroll-margin-top:16px}
 /* versão compartilhada e histórico */
 .sync{margin:14px 0 0; padding:9px 14px; border-radius:8px; font-size:13.5px; background:var(--surface); color:var(--muted); display:flex; align-items:center; gap:8px}
 .sync::before{content:""; width:8px; height:8px; border-radius:50%; background:var(--c-atual); flex:0 0 auto}
@@ -550,6 +554,7 @@ button:focus-visible{outline:2px solid var(--brand); outline-offset:2px}
       <label class="mfilter"><span id="m-filter-l">Ver marca</span><select id="m-filter"></select></label>
     </div>
     <div class="mctx" id="m-ctx"></div>
+    <nav class="sq-jump" id="sq-jump" aria-label="Atalhos para os squads"></nav>
     <div class="mprem" id="m-note"></div>
     <div id="m-detail" hidden></div>
     <div id="m-summary" class="qrow" hidden></div>
@@ -1061,7 +1066,23 @@ const mInT = (i, f, cls = '') => {
   return m ? `<span class="money"><span class="cur">R$</span>${inp}</span>` : inp;
 };
 
+function buildJump(){
+  const nav = document.getElementById('sq-jump');
+  if (!nav) return;
+  const V = mView();
+  if (V.t === 'one') { nav.innerHTML = ''; return; }
+  const list = V.t === 'sq' ? [V.sq] : state.squads;
+  nav.innerHTML = `<button type="button" class="primary" data-jump="m-squads">${V.t === 'sq' ? 'Ir para o squad' : 'Ir para os squads'} ↓</button>`
+    + (V.t === 'all' ? list.map(q => `<button type="button" data-jump="sq:${esc(q.id)}"><span data-sqnm="${esc(q.id)}">${esc(q.nome)}</span> <span class="sq-br">${esc(sqBrands(q))}</span></button>`).join('') : '');
+}
+document.getElementById('sq-jump').addEventListener('click', e => {
+  const b = e.target.closest('button[data-jump]'); if (!b) return;
+  const j = b.dataset.jump;
+  const el = j.startsWith('sq:') ? document.querySelector(`#sq-list article[data-sq="${CSS.escape(j.slice(3))}"]`) : document.getElementById(j);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
 function buildFilter(){
+  buildJump();
   const sel = document.getElementById('m-filter');
   const sqs = state.squads.filter(x => x.marcas.length);
   sel.innerHTML = `<option value="todas">Todas as marcas</option>`
@@ -1291,7 +1312,7 @@ function renderM(){
   if (V.t === 'all' && pr.length) {
     const nT = pr.reduce((a, x) => a + x.n, 0);
     const avg = pr.reduce((a, x) => a + x.p.pct * x.n, 0) / nT;
-    const sorted = pr.slice().sort((a, b) => b.p.pct - a.p.pct);
+    const sorted = pr.filter(x => !x.sub).sort((a, b) => b.p.pct - a.p.pct);
     const up = sorted.filter(x => x.p.pct >= avg - 1e-9).length, down = sorted.length - up;
     const hit = sorted.filter(x => x.p.pct + 1e-9 >= meta).length;
     const pos = v => Math.min(100, Math.max(0, v * 100));
@@ -1305,7 +1326,7 @@ function renderM(){
         <p class="scen-pct">${pf(avg)}<small>%</small></p>
         <div class="prog"><div class="prog-fill" style="width:${pos(avg)}%"></div><div class="prog-meta" style="left:${pos(meta)}%"><span>Meta ${metaTxt}</span></div></div>
         <div class="scale"><span>0%</span><span>100% da jornada</span></div>
-        <p class="scen-status">${up} ${up === 1 ? 'marca está' : 'marcas estão'} acima da média e ${down} abaixo (cada vendedor multimarca conta como uma). <strong>${hit ? `${hit} ${hit === 1 ? 'atinge' : 'atingem'} a meta de ${metaTxt}.` : `Nenhuma atinge a meta de ${metaTxt}.`}</strong> ${fim}</p>
+        <p class="scen-status">${up} ${up === 1 ? 'marca está' : 'marcas estão'} acima da média e ${down} abaixo. <strong>${hit ? `${hit} ${hit === 1 ? 'atinge' : 'atingem'} a meta de ${metaTxt}.` : `Nenhuma atinge a meta de ${metaTxt}.`}</strong> ${fim}</p>
         <dl class="kstats">
           <div><dt>Acima da média</dt><dd>${up}</dd></div>
           <div><dt>Abaixo da média</dt><dd>${down}</dd></div>
@@ -1652,11 +1673,12 @@ function fillCmp(el, pr){
   const meta = num(state.g.meta) / 100;
   const nT = pr.reduce((a, x) => a + x.n, 0);
   const avg = pr.reduce((a, x) => a + x.p.pct * x.n, 0) / nT;
-  const sorted = pr.slice().sort((a, b) => b.p.pct - a.p.pct);
+  const sorted = pr.filter(x => !x.sub).sort((a, b) => b.p.pct - a.p.pct);
+  if (!sorted.length) { el.innerHTML = ''; return; }
   const up = sorted.filter(x => x.p.pct >= avg - 1e-9).length;
   const pos = v => Math.min(100, Math.max(0, v * 100));
   el.innerHTML = `<p class="kcmp-t">Marcas acima e abaixo da média<span>${up} acima, ${sorted.length - up} abaixo</span></p>
-    <ul class="cb-keys"><li><i class="ln"></i>Média ${pf(avg)}%</li><li><i class="ln dash"></i>Meta ${nf(num(state.g.meta), 1)}%</li><li>Cada marca no QLP definido</li></ul>
+    <ul class="cb-keys"><li><i class="ln"></i>Média ${pf(avg)}%</li><li><i class="ln dash"></i>Meta ${nf(num(state.g.meta), 1)}%</li><li>Cada marca no QLP definido; a média inclui os vendedores multimarca</li></ul>
     ${sorted.map(x => `<div class="cb-row" title="${esc(x.sub || x.who)}"><span class="cb-l">${esc(x.who)}</span><div class="cb-track" role="img" aria-label="${esc(x.who)}: ${pf(x.p.pct)}%"><div class="cb-fill ${x.p.pct >= avg - 1e-9 ? 'up' : 'down'}" style="width:${pos(x.p.pct)}%"></div><span class="cb-avg" style="left:${pos(avg)}%"></span><span class="cb-meta" style="left:${pos(meta)}%"></span></div><span class="cb-v">${pf(x.p.pct)}%</span></div>`).join('')}`;
 }
 (function bindSquads(){
