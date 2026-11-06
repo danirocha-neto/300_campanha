@@ -1,0 +1,2001 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cenário R$ 1,6 mi · Calculadora de tripulação 300</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+:root{
+  --paper:#ffffff; --surface:#f5f5f5; --ink:#0f0f0f; --muted:#5c5c5c; --line:#e9e9e9;
+  --brand:#e30000; --brand-soft:#fde8e8; --input-bg:#ffffff; --input-line:#cfcfcc; --free:#ececea;
+  --c-atual:#8c8c89; --warn:#b06200; --warn-bg:#fff3de; --base-c:#4f8496; --base-t:#2f6577; --head-bg:#0f0f0f; --zebra:#fafaf9; --hover:#fbf1f0;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0f0f0f; --surface:#212121; --ink:#f5f5f5; --muted:#a3a3a3; --line:#2e2e2e;
+    --brand:#e30000; --brand-soft:#3a1715; --input-bg:#141416; --input-line:#46464a; --free:#2c2c2f;
+    --c-atual:#8e8e8b; --warn:#d98a1f; --warn-bg:#33281a; --base-c:#5f97aa; --base-t:#a6d3e2; --head-bg:#212121; --zebra:#1d1d1f; --hover:#2b201f;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0f0f0f; --surface:#212121; --ink:#f5f5f5; --muted:#a3a3a3; --line:#2e2e2e;
+  --brand:#e30000; --brand-soft:#3a1715; --input-bg:#141416; --input-line:#46464a; --free:#2c2c2f;
+  --c-atual:#8e8e8b; --warn:#d98a1f; --warn-bg:#33281a; --base-c:#5f97aa; --base-t:#a6d3e2; --head-bg:#212121; --zebra:#1d1d1f; --hover:#2b201f;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"Roboto",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  font-size:16px; line-height:1.5; font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px; margin:0 auto; padding:28px 24px 64px}
+
+/* Cabeçalho */
+.top{display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:24px; padding-bottom:24px; border-bottom:3px solid var(--brand)}
+.brand{display:flex; align-items:flex-end; gap:18px}
+.brand img{height:46px; width:auto; display:block}
+.brand h1{margin:0; font-size:clamp(26px,3.4vw,38px); line-height:1; font-weight:700; letter-spacing:-.02em}
+.eyebrow{display:block; margin:0 0 8px; font-size:11px; font-weight:500; letter-spacing:.32em; text-transform:uppercase; color:var(--brand)}
+.brand p{margin:6px 0 0; color:var(--muted); font-size:15px}
+.globals{display:flex; flex-wrap:wrap; gap:10px 20px; align-items:center}
+.globals label{display:flex; align-items:center; gap:8px; font-size:14px; color:var(--muted)}
+
+/* Campos */
+input[type=number],input[data-money]{
+  font:inherit; font-weight:700; color:var(--ink); background:var(--input-bg);
+  border:1px solid var(--input-line); border-radius:6px; padding:3px 6px; width:4.4em; text-align:right;
+  font-variant-numeric:tabular-nums; -moz-appearance:textfield; appearance:textfield;
+}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none; margin:0}
+input[type=number]:hover,input[data-money]:hover{border-color:var(--muted)}
+input[type=number]:focus-visible,input[data-money]:focus-visible{outline:2px solid var(--brand); outline-offset:1px; border-color:var(--brand)}
+input.w-s{width:3.4em}
+
+h2{margin:0 0 4px; font-size:22px; font-weight:700;}
+.lead{margin:0 0 22px; color:var(--muted); max-width:70ch}
+
+/* Indicadores */
+.day{margin-top:36px}
+.kpis{display:grid; grid-template-columns:1fr 1fr; gap:24px}
+.kpi{background:var(--surface); border-radius:12px; padding:20px 22px 18px; border-top:5px solid var(--c-atual)}
+.kpi-ideal{border-top-color:var(--brand)}
+.scen-name{margin:0; font-size:16px; font-weight:700}
+.scen-pct{margin:4px 0 0; font-size:52px; line-height:1; font-weight:900; letter-spacing:-.02em}
+.scen-pct small{font-size:22px; font-weight:700; margin-left:2px}
+.prog{position:relative; height:16px; background:var(--free); border-radius:8px; margin:34px 0 6px}
+.prog-fill{height:100%; border-radius:8px; background:var(--c-atual); transition:width .35s ease}
+.kpi-ideal .prog-fill{background:var(--brand)}
+.prog-meta{position:absolute; top:-22px; bottom:-6px; width:0; border-left:2px dashed var(--ink); transition:left .35s ease}
+.prog-meta span{position:absolute; top:-2px; left:6px; font-size:12px; font-weight:700; white-space:nowrap}
+.scale{display:flex; justify-content:space-between; font-size:12px; color:var(--muted)}
+.scen-status{margin:12px 0 0; font-size:14px; color:var(--muted); line-height:1.45}
+.scen-status strong{color:var(--ink)}
+
+/* Tabela comparativa */
+.cmp{margin-top:44px}
+.tscroll{overflow-x:auto; border:1px solid var(--line); border-radius:12px}
+table.ct{width:100%; min-width:640px; border-collapse:collapse}
+.ct col.c-act{width:34%} .ct col.c-val{width:22%} .ct col.c-dif{width:22%}
+.ct th,.ct td{padding:11px 16px; text-align:right; vertical-align:middle; border-bottom:1px solid var(--line)}
+.ct th:first-child,.ct td:first-child{text-align:left}
+.ct thead th{font-size:15px; font-weight:700; background:var(--paper); position:relative}
+.ct thead th.h-atual{box-shadow:inset 0 5px 0 var(--c-atual)}
+.ct thead th.h-ideal{box-shadow:inset 0 5px 0 var(--brand); background:var(--brand-soft)}
+.ct thead th:first-child{color:var(--muted); font-weight:700}
+.ct td.v-ideal{background:var(--brand-soft)}
+.ct tr.sec td{background:var(--surface); font-size:13px; font-weight:700; color:var(--muted); padding-top:9px; padding-bottom:9px}
+.ct tr.sec td.v-ideal{background:var(--surface)}
+.ct .nm{font-weight:700; font-size:15px}
+.ct .val{font-size:18px; font-weight:700; white-space:nowrap}
+.ct .val small{font-size:12px; font-weight:600; color:var(--muted); margin-left:2px}
+.ct .pr{display:block; font-size:12px; color:var(--muted); font-weight:500; white-space:nowrap}
+.ct tr.sub td{font-weight:700}
+.ct tr.sub .nm{font-weight:700}
+.ct tr.sub td{border-top:2px solid var(--ink)}
+.ct tr.key td{border-top:2px solid var(--ink); border-bottom:0}
+.ct tr.key .nm{font-size:16px; font-weight:700}
+.ct tr.key .val{font-size:24px}
+.chip{display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:999px; font-weight:700; font-size:14px; white-space:nowrap}
+.chip.up{background:var(--brand); color:#fff}
+.chip.down{background:var(--ink); color:var(--paper)}
+.chip.eq{color:var(--muted); font-weight:600}
+.delta{margin:16px 0 0; padding:14px 18px; background:var(--surface); border-left:4px solid var(--brand); border-radius:0 8px 8px 0; font-size:15px}
+
+/* Premissas */
+.editors{display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-top:16px}
+.edit-wrap{display:block; margin-top:44px}
+.edit-wrap > summary{cursor:pointer; list-style:none; display:flex; align-items:center; gap:12px; padding:13px 18px; border:1px solid var(--input-line); border-radius:10px; background:var(--paper); font-weight:700; font-size:15px; user-select:none}
+.edit-wrap > summary::-webkit-details-marker{display:none}
+.edit-wrap > summary::before{content:""; width:8px; height:8px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(-45deg); transition:transform .2s}
+.edit-wrap[open] > summary::before{transform:rotate(45deg) translate(-2px,-2px)}
+.edit-wrap > summary:hover{border-color:var(--ink)}
+.edit-wrap > summary:focus-visible{outline:2px solid var(--brand); outline-offset:2px}
+.edit-wrap > summary .h-open{display:none}
+.edit-wrap[open] > summary .h-open{display:inline}
+.edit-wrap[open] > summary .h-closed{display:none}
+.edit-wrap > summary small{margin-left:auto; font-size:13px; font-weight:600; color:var(--muted)}
+
+/* Calculadora de QLP */
+.qlp{margin-top:64px; padding-top:28px; border-top:3px solid var(--brand)}
+.qlp h2.big{margin:0 0 6px}
+.qrow{margin-top:22px}
+.qrow-t{margin:0 0 8px; font-size:13px; font-weight:700; color:var(--muted)}
+.qcells{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px}
+.qc-v{flex-wrap:nowrap; white-space:nowrap}
+.qc-v input{width:3.8em}
+.qc{display:flex; flex-direction:column; gap:8px; padding:14px 16px; border-radius:10px; background:var(--surface); min-height:104px}
+.qc-l{font-size:13px; font-weight:700; color:var(--muted); line-height:1.3}
+.qc-v{display:flex; align-items:center; gap:7px; font-size:13px; color:var(--muted); margin-top:auto}
+.qc-v input{flex:0 0 auto; width:4.2em; font-size:20px; padding:4px 8px}
+.qc-v input[data-q="ticket"]{width:5.4em}
+.qc.calc{background:var(--paper); border:1px solid var(--line)}
+.qc-n{font-size:28px; letter-spacing:-.01em; font-weight:900; font-weight:700; line-height:1.05; white-space:nowrap; margin-top:auto}
+.qc-f{font-size:12px; color:var(--muted); line-height:1.4}
+.qc.in-key{background:var(--brand-soft); box-shadow:inset 4px 0 0 var(--brand)}
+.qc.out-key{background:var(--ink); border-color:var(--ink)}
+.qc.out-key .qc-l,.qc.out-key .qc-f{color:var(--paper); opacity:.82}
+.qc.out-key .qc-n{color:var(--paper)}
+.qc.is-base{background:#e6eff3; box-shadow:inset 4px 0 0 #4f8496}
+.base-tag{color:#2f6577 !important; border-color:#9fc0cb !important}
+.qkey{display:flex; flex-wrap:wrap; gap:8px 22px; margin:14px 0 0; padding:0; list-style:none; font-size:13px; color:var(--muted)}
+.qkey li{display:flex; align-items:center; gap:8px}
+.qkey i{width:16px; height:16px; border-radius:4px; display:inline-block}
+.qkey .k-in{background:var(--surface); border:1px solid var(--input-line)}
+.qkey .k-calc{background:var(--paper); border:1px solid var(--line)}
+.qkey .k-base{background:#e6eff3; box-shadow:inset 3px 0 0 #4f8496}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .qc.is-base,:root:not([data-theme="light"]) .qkey .k-base{background:#1b2a30; box-shadow:inset 4px 0 0 #7fb3c4}
+  :root:not([data-theme="light"]) .base-tag{color:#a6d3e2 !important; border-color:#3f6672 !important}
+}
+:root[data-theme="dark"] .qc.is-base,:root[data-theme="dark"] .qkey .k-base{background:#1b2a30; box-shadow:inset 4px 0 0 #7fb3c4}
+:root[data-theme="dark"] .base-tag{color:#a6d3e2 !important; border-color:#3f6672 !important}
+.money{display:inline-flex; align-items:center; gap:5px}
+.cur{font-size:12px; font-weight:700; color:var(--muted)}
+input[data-money]{text-align:right}
+.ref{display:inline-block; margin-left:6px; font-size:11px; font-weight:700; color:var(--muted); border:1px solid var(--input-line); border-radius:999px; padding:0 7px; vertical-align:1px}
+
+/* Abas */
+.tabs{display:flex; gap:4px; margin:18px 0 0; border-bottom:1px solid var(--line)}
+.tabs a{padding:10px 18px; font-weight:700; font-size:15px; color:var(--muted); text-decoration:none; border-bottom:3px solid transparent; margin-bottom:-1px}
+.tabs a:hover{color:var(--ink)}
+.tabs a[aria-current="page"]{color:var(--ink); border-bottom-color:var(--brand)}
+.tabs a:focus-visible{outline:2px solid var(--brand); outline-offset:2px; border-radius:4px}
+h2.big{margin:36px 0 6px; font-size:clamp(28px,3.8vw,44px); line-height:1; font-weight:700; letter-spacing:-.02em}
+.qsub{margin:44px 0 4px; font-size:20px; font-weight:700;}
+input.w-m{width:6.8em}
+
+/* Por marca */
+.mhead{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:16px 32px}
+.mhead .lead{margin-bottom:0}
+.mfilter{display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; color:var(--muted)}
+select{font:inherit; font-size:16px; font-weight:700; color:var(--ink); background:var(--input-bg); border:1px solid var(--input-line); border-radius:8px; padding:8px 12px; min-width:280px; max-width:100%}
+select:focus-visible{outline:2px solid var(--brand); outline-offset:1px}
+.mnote{margin:22px 0 0; padding:12px 16px; background:var(--surface); border-radius:10px; font-size:14px; color:var(--muted); display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px 24px; align-items:center}
+.mnote b{color:var(--ink)}
+.mnote label{display:flex; align-items:center; gap:8px; color:var(--ink); font-weight:600}
+#m-detail{margin-top:8px}
+.mdgrid{display:grid; grid-template-columns:minmax(280px,1fr) 1.5fr; gap:20px; align-items:stretch}
+.mdgrid > .kpi{display:flex; flex-direction:column}
+.mdgrid > .tscroll,.mdgrid > .mchart{height:100%}
+.mdgrid > .mchart{display:flex; flex-direction:column}
+.mdgrid > .mchart .cb-row{flex:1 1 auto}
+.kstats{margin:18px 0 0; padding:16px 0 0; border-top:1px solid var(--line); display:grid; grid-template-columns:1fr 1fr; gap:14px 18px; flex:1 1 auto; align-content:space-around}
+.kstats:empty{display:none}
+.kstats div{min-width:0}
+.kstats dt{font-size:12px; font-weight:500; color:var(--muted); text-transform:uppercase; letter-spacing:.04em}
+.kstats dd{margin:3px 0 0; font-size:18px; font-weight:700; line-height:1.25; overflow-wrap:anywhere}
+.kstats dd small{display:block; font-size:12.5px; font-weight:500; color:var(--muted)}
+.mdgrid > .kpi .scen-status{margin-bottom:18px}
+.mb tr.pctr td{background:var(--brand); color:#fff; font-weight:700; border-top:0; border-bottom:0}
+.mb tr.pctr td.pr2{color:#ffe1de}
+.mb tr.pctr td.calc{font-size:18px; font-weight:900}
+/* Panorama e squads */
+.panorama{margin-top:64px; padding-top:28px; border-top:3px solid var(--brand)}
+.panorama > h2.big{margin-top:0}
+.big-sub{display:block; margin-top:8px; font-size:clamp(18px,2.2vw,24px); font-weight:500; letter-spacing:0; color:var(--muted)}
+.qlp{margin-top:36px; padding-top:0; border-top:0}
+.mprem{margin-top:22px}
+.mprem .qrow{margin-top:0}
+.mirror{font-weight:500; text-transform:none; letter-spacing:0; margin-left:6px}
+.squads{margin-top:44px}
+.sq-head{display:flex; justify-content:space-between; align-items:flex-end; gap:12px 24px; flex-wrap:wrap}
+.sq-head .qsub{margin-top:0}
+.sq-head .lead{margin-bottom:0}
+button.primary{background:var(--brand); border-color:var(--brand); color:#fff}
+button.primary:hover{background:#c40000; border-color:#c40000}
+.sq-pool{margin-top:16px; padding:14px 16px; border:2px dashed var(--input-line); border-radius:12px; background:var(--surface)}
+.sq-pool-t{margin:0 0 8px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted)}
+.chips{display:flex; flex-wrap:wrap; gap:8px; min-height:34px; align-items:center}
+.chip{display:inline-flex; align-items:center; gap:8px; padding:6px 12px; background:var(--paper); border:1px solid var(--input-line); border-radius:999px; font-size:13.5px; font-weight:700; cursor:grab; user-select:none}
+.chip:hover{border-color:var(--ink)}
+.chip:active{cursor:grabbing}
+.chip .nd{font-weight:500; font-size:12px; color:var(--muted)}
+.chip button{border:0; padding:0 2px; margin-right:-4px; font-size:17px; line-height:1; color:var(--muted); background:none}
+.chip button:hover{color:var(--brand)}
+.empty-hint{font-size:13.5px; color:var(--muted)}
+.drop-on{outline:2px dashed var(--brand); outline-offset:2px; background:var(--brand-soft) !important}
+.sq-msg{margin:8px 0 0; font-size:13.5px; font-weight:700; color:var(--warn)}
+.sq-msg:empty{display:none}
+.sq-list{display:grid; gap:18px; margin-top:18px}
+.squad{background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:18px 20px 20px; box-shadow:inset 0 4px 0 var(--brand)}
+.squad header{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+.sq-name{font:inherit; font-size:20px; font-weight:700; color:var(--ink); background:transparent; border:1px solid transparent; border-radius:8px; padding:4px 8px; margin-left:-8px; flex:1 1 220px; min-width:0}
+.sq-name:hover{border-color:var(--input-line)}
+.sq-name:focus-visible{outline:2px solid var(--brand); outline-offset:1px}
+.sq-count{font-size:13px; font-weight:500; color:var(--muted)}
+.sq-del{font-size:13px; padding:6px 12px}
+.sq-drop{margin-top:12px; padding:12px 14px; border:2px dashed var(--line); border-radius:12px; background:var(--surface)}
+.sq-addb{display:flex; align-items:center; gap:8px; margin-top:10px; font-size:13px; color:var(--muted)}
+.sq-addb select{min-width:220px; font-size:14px; padding:6px 10px}
+.sq-kpis{margin-top:16px}
+.sq-tw{margin-top:14px}
+.sq-t{min-width:820px}
+.sq-at{margin:16px 0 8px}
+.sq-alloc{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:8px}
+.sv{background:var(--surface); border-radius:10px; padding:10px 12px; box-shadow:inset 4px 0 0 var(--brand)}
+.sv.multi{box-shadow:inset 4px 0 0 var(--base-c)}
+.sv b{display:block; font-size:13.5px}
+.sv span{display:block; font-size:12.5px; color:var(--muted); margin-top:2px}
+.sv .load{height:6px; margin:8px 0 2px}
+.sv.ded .load i{background:var(--brand)}
+
+.qc-v input[data-mk$="-meta"]{width:5.4em}
+.mt{min-width:1000px}
+.mt th,.mt td{padding:9px 7px; font-size:13.5px}
+.mt thead th{font-size:13px; line-height:1.3}
+.mt td.calc{font-weight:700; white-space:nowrap}
+.mt td.nm{min-width:150px; max-width:190px; line-height:1.3}
+.mt .tag2{white-space:normal}
+.mt th.st,.mt td.st{text-align:left; width:150px; min-width:140px}
+.mt input.w-m{width:6em}
+.mt input{width:4em}
+.mt input.w-s{width:3em}
+.mt tfoot td{border-top:2px solid var(--ink); border-bottom:0; font-weight:700; background:var(--surface); white-space:nowrap}
+.mt tr.diff td{background:var(--warn-bg)}
+.mp{min-width:1060px}
+.mp th.tg{background:var(--surface)}
+.mp td.tg{background:var(--surface)}
+.mchart{background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:16px 18px}
+.mchart h4{margin:0 0 6px; font-size:15px; font-weight:700}
+.cb-keys{display:flex; flex-wrap:wrap; gap:6px 16px; margin:0 0 8px; padding:0; list-style:none; font-size:12.5px; color:var(--muted)}
+.cb-keys li{display:flex; align-items:center; gap:6px}
+.cb-keys i{display:inline-block; width:12px; height:12px; border-radius:3px}
+.cb-keys i.up{background:var(--brand)}
+.cb-keys i.down{background:var(--c-atual)}
+.cb-keys i.ln{width:0; height:14px; border-radius:0; border-left:2px solid var(--ink)}
+.cb-keys i.ln.dash{border-left-style:dashed}
+.cb-row{display:grid; grid-template-columns:170px 1fr 62px; gap:10px; align-items:center; padding:4px 0}
+.cb-l{font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.cb-track{position:relative; height:16px; background:var(--free); border-radius:4px}
+.cb-track.axis{background:none; height:14px}
+.cb-fill{height:100%; border-radius:4px}
+.cb-fill.up{background:var(--brand)}
+.cb-fill.down{background:var(--c-atual)}
+.cb-avg,.cb-meta{position:absolute; top:-4px; bottom:-4px; width:0; border-left:2px solid var(--ink)}
+.cb-meta{border-left-style:dashed}
+.cb-tag{position:absolute; bottom:0; transform:translateX(-50%); font-size:11.5px; font-weight:700; white-space:nowrap}
+.cb-v{font-size:13px; font-weight:700; text-align:right}
+@media (max-width:520px){ .cb-row{grid-template-columns:110px 1fr 54px} }
+
+/* Tabelas no padrão 300 */
+.tscroll{border:0; border-radius:14px; background:var(--paper); box-shadow:0 0 0 1px var(--line), 0 14px 32px -22px rgba(0,0,0,.45)}
+.ct thead th{background:var(--head-bg); color:#fff; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; line-height:1.3; padding-top:15px; padding-bottom:13px; border-bottom:4px solid var(--brand); vertical-align:bottom}
+.ct thead th:first-child{color:#fff}
+.ct thead th.h-atual{background:#4a4a48; box-shadow:none}
+.ct thead th.h-ideal{background:var(--brand); box-shadow:none}
+.mp thead th.tg{background:#333331}
+.ct tbody tr:last-child td{border-bottom:0}
+.mt tbody tr:nth-child(even) td{background:var(--zebra)}
+.mt tbody tr:hover td{background:var(--hover)}
+.mt tbody tr.diff td{background:var(--warn-bg)}
+.mt tbody td.nm{position:relative; padding-left:18px; font-weight:700}
+.mt tbody td.nm::before{content:""; position:absolute; left:0; top:10px; bottom:10px; width:4px; border-radius:0 3px 3px 0; background:var(--brand)}
+.mt tbody tr.diff td.nm::before{background:var(--warn)}
+.mp tbody td.tg{background:var(--surface)}
+.mp tbody tr:hover td.tg{background:var(--hover)}
+.ct tfoot td{background:var(--head-bg) !important; color:#fff; border-top:0 !important; padding-top:14px; padding-bottom:14px}
+.ct tfoot td.nm{text-transform:uppercase; letter-spacing:.05em; font-size:12.5px}
+.ct tfoot .pct.hit{color:#ff4d40}
+.ct td input[type=number],.ct td input[data-money]{background:var(--surface); border-color:transparent; border-radius:8px; padding:5px 8px; font-weight:700}
+.ct td input[type=number]:hover,.ct td input[data-money]:hover{border-color:var(--input-line)}
+.ct td input[type=number]:focus-visible,.ct td input[data-money]:focus-visible{background:var(--input-bg); border-color:var(--brand)}
+.mt td.calc{font-variant-numeric:tabular-nums}
+.tag2{padding:3px 10px; letter-spacing:.01em}
+.tag2.ok{background:var(--surface); border-color:transparent}
+.mb thead th{font-size:11px}
+.mt thead th{font-size:10.5px; letter-spacing:.02em}
+.mt td input[type=number],.mt td input[data-money]{padding:5px 6px}
+.mt input{width:4.3em}
+.mt input.w-m{width:5.8em}
+.mt input.w-s{width:2.8em}
+.mb tr.tot td{background:var(--head-bg); color:#fff; border-top:0}
+.mb tr.tot td.pr2{color:#cfcfcd}
+.mb{min-width:0}
+.mb td.pr2{color:var(--muted); font-size:13px}
+.mb tr.tot td{border-top:2px solid var(--ink); font-weight:700}
+.tag2{display:inline-block; font-size:12px; font-weight:700; border-radius:999px; padding:2px 9px; margin:2px 4px 2px 0; white-space:nowrap}
+.tag2.warn{background:var(--warn); color:#fff}
+.tag2.multi{background:var(--base-c); color:#fff}
+.tag2.ok{color:var(--muted); border:1px solid var(--line); font-weight:600}
+.tag2.abs{border:1px solid var(--base-c); color:var(--base-t)}
+.pct{font-weight:700}
+.pct.hit{color:var(--brand)}
+.pct.over{background:var(--warn); color:#fff; padding:2px 9px; border-radius:999px}
+.msellers{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; margin-top:14px}
+.mseller{background:var(--surface); border-radius:12px; padding:16px 18px; box-shadow:inset 4px 0 0 var(--base-c)}
+.mseller h4{margin:0; font-size:16px; font-weight:700}
+.mseller .ml{margin:4px 0 0; font-size:13px; color:var(--muted)}
+.load{height:10px; background:var(--free); border-radius:5px; margin:10px 0 8px; overflow:hidden}
+.load i{display:block; height:100%; background:var(--base-c); border-radius:5px}
+.mseller ul{margin:0; padding:0; list-style:none; font-size:14px}
+.mseller li{display:flex; justify-content:space-between; gap:12px; padding:4px 0; border-bottom:1px solid var(--line)}
+.mseller li:last-child{border-bottom:0}
+.mseller .mfree{margin:8px 0 0; font-size:13px; color:var(--muted)}
+.mabs{margin:14px 0 0; font-size:14px; color:var(--muted); line-height:1.9}
+.empty{margin:10px 0 0; color:var(--muted); font-size:14px}
+@media (max-width:900px){ .mdgrid{grid-template-columns:1fr} }
+/* Ajustes: squads e marcas */
+.sq-br{font-weight:500; color:var(--muted)}
+.sq-brs{font-size:15px; font-weight:500; color:var(--muted); flex:1 1 auto}
+.sq-name{flex:0 1 auto; field-sizing:content; min-width:6ch}
+[hidden]{display:none !important}
+.mctx{margin:22px 0 0; padding:14px 18px; background:var(--brand-soft); border-left:4px solid var(--brand); border-radius:0 10px 10px 0; font-size:15px}
+.mctx:empty{display:none}
+.mctx b{font-weight:700}
+.sq-t tfoot tr.pv td{background:var(--brand) !important; color:#fff; border-top:1px solid rgba(255,255,255,.25) !important}
+.sq-t tfoot tr.pv .pr{color:#ffe1de; text-align:right}
+.sq-t tfoot tr.pv td.nm .pr{text-align:left; white-space:normal}
+.mt td.nm .prem{text-align:left; white-space:normal; font-weight:500; margin-top:2px}
+.mcopy{display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-top:10px; font-size:13.5px; color:var(--muted)}
+.mcopy b{color:var(--ink)}
+.sqcalc{margin-top:16px; padding:0 16px; border:1px solid var(--line); border-radius:12px}
+.sqcalc[open]{padding-bottom:16px}
+.sqcalc > summary{cursor:pointer; list-style:none; display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; padding:14px 0; font-weight:700; font-size:15px; user-select:none}
+.sqcalc > summary::-webkit-details-marker{display:none}
+.sqcalc > summary::before{content:""; width:8px; height:8px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(-45deg); transition:transform .2s}
+.sqcalc[open] > summary::before{transform:rotate(45deg) translate(-2px,-2px)}
+.sqcalc > summary small{font-size:13px; font-weight:500; color:var(--muted)}
+.sqcalc > summary:focus-visible{outline:2px solid var(--brand); outline-offset:2px; border-radius:6px}
+.sqcalc-h:has(> [hidden]:only-child){display:none}
+.sq-prod{margin-top:22px}
+.cen{margin-top:14px; padding:14px 18px; border-radius:10px; background:var(--brand-soft); border-left:4px solid var(--brand); font-size:14px}
+.cen p{margin:0}
+.cen .cen-t{font-size:16px; margin-bottom:4px}
+.scen-sub{margin:-2px 0 10px; font-size:13px; color:var(--muted)}
+.absin{display:flex; flex-wrap:wrap; align-items:center; gap:8px 18px; margin-top:10px; padding:10px 14px; background:var(--surface); border-radius:10px; font-size:13.5px; color:var(--muted)}
+.absin b{color:var(--ink)}
+.absin label{display:flex; align-items:center; gap:6px; color:var(--ink); font-weight:600}
+.absin input{width:4.6em}
+.mdgrid > .mchart.sqchart .cb-row{flex:0 0 auto; grid-template-columns:minmax(0,230px) 1fr 150px; padding:7px 0}
+.sqchart .cb-v small{font-weight:500; color:var(--muted); font-size:12.5px}
+.mdgrid > .mchart.sqchart .cb-row[aria-hidden]{padding-top:14px}
+.sq-jump{display:flex; flex-wrap:wrap; gap:8px; margin-top:18px}
+.sq-jump:empty{display:none}
+.sq-jump button{font-size:13.5px; padding:7px 14px; border-radius:999px}
+.squads,.squad{scroll-margin-top:16px}
+/* versão compartilhada e histórico */
+.sync{margin:14px 0 0; padding:9px 14px; border-radius:8px; font-size:13.5px; background:var(--surface); color:var(--muted); display:flex; align-items:center; gap:8px}
+.sync::before{content:""; width:8px; height:8px; border-radius:50%; background:var(--c-atual); flex:0 0 auto}
+.sync[data-st="ok"]::before{background:#2e9d5b}
+.sync[data-st="saving"]::before{background:var(--warn)}
+.sync[data-st="ro"]::before{background:var(--base-c)}
+.sync[data-st="err"],.sync[data-st="slow"]{background:var(--warn-bg); color:var(--ink)}
+.sync[data-st="err"]::before,.sync[data-st="slow"]::before{background:var(--warn)}
+.hist-wrap{margin-top:44px}
+#hist{margin-top:12px}
+.hlist{list-style:none; margin:0; padding:0; display:grid; gap:8px}
+.hitem{background:var(--surface); border-radius:10px; padding:10px 14px; font-size:14px}
+.hmeta{display:flex; flex-wrap:wrap; gap:4px 10px; align-items:baseline; font-size:13px; color:var(--muted)}
+.hmeta b{color:var(--ink); font-size:14px}
+.hch{list-style:none; margin:6px 0 0; padding:0; display:grid; gap:2px}
+.hch li{line-height:1.45}
+.hch .de{color:var(--muted); text-decoration:line-through}
+.hch .para{font-weight:700}
+.hnote{margin:6px 0 0; font-weight:700}
+.hmore{margin:4px 0 0; font-size:12.5px; color:var(--muted)}
+.ro-off{opacity:.55; cursor:not-allowed !important}
+.sync{flex-wrap:wrap; justify-content:space-between}
+.sync > span:first-of-type{flex:1 1 320px}
+.sync-who{font-size:13px; color:var(--muted)}
+.sync-who b{color:var(--ink)}
+.linkbtn{border:0; padding:0 2px; background:none; color:var(--brand); font-size:13px; font-weight:700; text-decoration:underline; cursor:pointer}
+.dlg{position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px}
+.dlg-box{background:var(--paper); color:var(--ink); border-radius:14px; padding:22px 24px; max-width:420px; width:100%; box-shadow:0 20px 50px -20px rgba(0,0,0,.6); border-top:5px solid var(--brand)}
+.dlg-box h3{margin:0 0 6px; font-size:19px}
+.dlg-box p{margin:0 0 14px; color:var(--muted); font-size:14px}
+.dlg-box input{font:inherit; width:100%; padding:9px 12px; border:1px solid var(--input-line); border-radius:8px; background:var(--input-bg); color:var(--ink); font-weight:700}
+.dlg-box input:focus-visible{outline:2px solid var(--brand); outline-offset:1px}
+.dlg-act{display:flex; justify-content:flex-end; gap:10px; margin-top:16px}
+.sq-prod .mdgrid > .tscroll{height:auto; align-self:start}
+.sq-prod .mdgrid{grid-template-columns:minmax(0,1fr) minmax(0,1.5fr)}
+table.ct.mb{min-width:0}
+.mb th,.mb td{padding-left:12px; padding-right:12px}
+.mb tr.pctr td.pr2{line-height:1.35}
+.kcmp{margin-top:14px; padding-top:12px; border-top:1px solid var(--line)}
+.kcmp:empty{display:none}
+.kcmp-t{display:flex; justify-content:space-between; gap:8px; margin:0 0 4px; font-size:12px; font-weight:500; color:var(--muted); text-transform:uppercase; letter-spacing:.04em}
+.kcmp-t span{text-transform:none; letter-spacing:0; font-weight:700; color:var(--ink)}
+.kcmp .cb-keys{font-size:11.5px; gap:4px 12px; margin-bottom:4px}
+.kcmp .cb-keys i.ln{height:10px}
+.kcmp .cb-row{grid-template-columns:minmax(0,120px) 1fr 50px; gap:8px; padding:2px 0}
+.kcmp .cb-l,.kcmp .cb-v{font-size:12px}
+.kcmp .cb-track{height:8px}
+.kcmp .cb-avg,.kcmp .cb-meta{top:-3px; bottom:-3px}
+.sqcalc .qrow{margin-top:12px}
+.sqcalc-h{display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:8px 16px}
+.sqcalc-h .qrow-t{margin:0; color:var(--ink); font-size:15px}
+.sqcalc .qc{min-height:92px}
+.sqcalc input[data-money]{width:6.8em}
+.ref.adj{border-color:var(--warn); color:var(--warn)}
+.sq-t tfoot tr.pv td{padding-top:8px; padding-bottom:8px}
+
+.editor{background:var(--surface); border-radius:12px; padding:22px 22px 18px; border-top:5px solid var(--c-atual)}
+.editor-ideal{border-top-color:var(--brand)}
+.editor-head{display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:6px}
+.editor h3{margin:0; font-size:20px; font-weight:700;}
+.editor-head span{font-size:13px; color:var(--muted)}
+.group{margin-top:16px}
+.group-head{display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:var(--muted); padding:0 0 6px; border-bottom:1px solid var(--line)}
+.row{display:grid; grid-template-columns:1fr auto; gap:4px 10px; align-items:start; padding:10px 0; border-bottom:1px solid var(--line)}
+.row-name{font-weight:700; font-size:15px}
+.row-rule{grid-column:1 / -1; font-size:14px; color:var(--muted); line-height:2}
+.row-rule b{color:var(--ink)}
+.row-min{grid-row:1; grid-column:2; font-weight:700; font-size:18px; text-align:right; white-space:nowrap}
+.row-min small{font-size:12px; font-weight:600; color:var(--muted); margin-left:2px}
+.nut-wrap{display:block; margin-top:6px; line-height:1.5}
+.nut-wrap summary{cursor:pointer; list-style:none; display:inline-flex; align-items:center; gap:9px; font-size:14px; font-weight:700; color:var(--ink); padding:5px 12px; border:1px solid var(--input-line); border-radius:8px; background:var(--paper); user-select:none}
+.nut-wrap summary::-webkit-details-marker{display:none}
+.nut-wrap summary::before{content:""; width:7px; height:7px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(-45deg); transition:transform .2s}
+.nut-wrap[open] summary::before{transform:rotate(45deg) translate(-2px,-2px)}
+.nut-wrap summary:hover{border-color:var(--ink)}
+.nut-wrap summary:focus-visible{outline:2px solid var(--brand); outline-offset:2px}
+.nut-wrap .h-open{display:none}
+.nut-wrap[open] .h-open{display:inline}
+.nut-wrap[open] .h-closed{display:none}
+.nut{background:var(--paper); border-radius:10px; padding:12px 14px; margin-top:8px; font-size:14px}
+@media (prefers-reduced-motion:reduce){.nut-wrap summary::before{transition:none}}
+.nut-sec{font-size:12px; font-weight:700; color:var(--muted); margin:12px 0 2px}
+.nut-sec:first-child{margin-top:0}
+.nl{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:4px 0; color:var(--muted)}
+.nl b{color:var(--ink); white-space:nowrap}
+.nl.res{border-top:1px dashed var(--line); margin-top:2px; padding-top:7px; color:var(--ink); font-weight:700}
+.nl.tot{border-top:2px solid var(--ink); margin-top:10px; padding-top:9px; color:var(--ink); font-weight:700; font-size:15px}
+.nl.tot b{font-size:17px}
+.nut-note{margin:10px 0 0; font-size:12.5px; color:var(--muted); line-height:1.45}
+.totals{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:16px}
+.tot-box{background:var(--paper); border-radius:8px; padding:10px 12px}
+.tot-box dt{font-size:12px; color:var(--muted)}
+.tot-box dd{margin:2px 0 0; font-size:20px; font-weight:700}
+.tot-box.hit dd{color:var(--brand)}
+
+.foot{display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; align-items:center; margin-top:28px; font-size:13px; color:var(--muted)}
+button{font:inherit; font-size:14px; font-weight:700; color:var(--ink); background:transparent; border:1px solid var(--input-line); border-radius:8px; padding:8px 14px; cursor:pointer}
+button:hover{border-color:var(--ink)}
+button:focus-visible{outline:2px solid var(--brand); outline-offset:2px}
+
+@media (max-width:900px){
+  .editors,.kpis{grid-template-columns:1fr}
+}
+@media (max-width:520px){
+  .wrap{padding:20px 16px 48px}
+  .brand img{height:34px}
+  .scen-pct{font-size:42px}
+  .totals{grid-template-columns:1fr 1fr}
+  .ct th,.ct td{padding:10px 10px}
+}
+@media (prefers-reduced-motion:reduce){.prog-fill,.prog-meta{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <img alt="300" src="data:image/png;base64,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">
+      <div>
+        <span class="eyebrow">Ecossistema 300 franchising</span>
+        <h1>Tripulação comercial</h1>
+        <p>Produtividade e QLP do time de vendas</p>
+      </div>
+    </div>
+    <div class="globals">
+      <label>Jornada <input type="number" min="1" step="any" data-g="dia" aria-label="Minutos por dia"> min/dia</label>
+      <label>Meta produtiva <input type="number" min="0" max="100" step="any" class="w-s" data-g="meta" aria-label="Meta de minutos produtivos em porcentagem"> %</label>
+      <label>Semana com <input type="number" min="1" max="7" step="1" class="w-s" data-g="semana" aria-label="Dias úteis por semana"> dias úteis</label>
+    </div>
+  </header>
+  <p class="sync" id="sync" data-st="local"></p>
+  <div class="cen">
+    <p class="cen-t">Cenário: meta financeira de <b>R$ 1.600.000</b></p>
+    <p>Meta anterior de R$ 2.350.000 reduzida em 31,9%. A meta e os leads de cada marca caíram na mesma proporção; ticket médio, conversões, cadência e média de ligação continuam iguais. A meta de abertura da visão geral também caiu 31,9% (de 660 para 449). Os squads começam iguais aos da calculadora atual. Esta página é independente: o que mudar aqui não altera a calculadora atual, e vice-versa.</p>
+  </div>
+
+  <nav class="tabs" aria-label="Visões da calculadora">
+    <a href="#geral" data-tab="geral">Visão geral</a>
+    <a href="#marcas" data-tab="marcas">Por marca</a>
+  </nav>
+
+  <div class="view" id="view-geral">
+  <section class="qlp" aria-labelledby="qlp-title">
+    <h2 class="big" id="qlp-title">Calculadora de QLP</h2>
+    <p class="lead">Quantas ligações o time precisa fazer para cumprir a meta de aberturas, quanto isso pesa por vendedor e o faturamento que a meta representa.</p>
+    <ul class="qkey"><li><i class="k-in"></i>Premissa editável</li><li><i class="k-calc"></i>Calculado</li><li><i class="k-base"></i>Valor base: o que a empresa tem hoje</li></ul>
+    <div id="q-calc"></div>
+  </section>
+
+  <div class="panorama">
+  <h2 class="big">Panorama de Produtividade:<span class="big-sub">cenário atual de performance versus projetado</span></h2>
+
+  <section class="day" aria-labelledby="day-title">
+    <h2 id="day-title">Tempo produtivo da jornada</h2>
+    <p class="lead" id="day-sub"></p>
+    <div class="kpis" id="kpis"></div>
+  </section>
+
+  <section class="cmp" aria-labelledby="cmp-title">
+    <h2 id="cmp-title">Cenário atual e capacidade instalada, lado a lado</h2>
+    <p class="lead">Volume de trabalho e minutos por atividade em cada cenário. A última coluna mostra quanto a capacidade instalada muda em relação ao cenário atual.</p>
+    <div class="tscroll"><table class="ct" id="ct"></table></div>
+  </section>
+
+  <details class="edit-wrap">
+    <summary><span class="h-closed">Mostrar premissas dos cenários</span><span class="h-open">Ocultar premissas dos cenários</span><small>Campos editáveis do cenário atual e da capacidade instalada</small></summary>
+    <section class="editors" id="editors" aria-label="Premissas dos cenários"></section>
+  </details>
+  </div>
+
+  
+  </div>
+
+  <div class="view" id="view-marcas" hidden>
+    <div class="mhead">
+      <div>
+        <h2 class="big">Calculadora por marca</h2>
+        <p class="lead">Cada marca tem a sua própria calculadora de QLP: meta de abertura, total de ligações e meta por vendedor são da marca, com premissas próprias. A Calculadora de QLP da visão geral continua com a meta da empresa, sem ligação com esta aba.</p>
+      </div>
+      <label class="mfilter"><span id="m-filter-l">Ver marca</span><select id="m-filter"></select></label>
+    </div>
+    <div class="mctx" id="m-ctx"></div>
+    <div class="mprem" id="m-note"></div>
+    <div id="m-detail" hidden></div>
+    <div id="m-summary" class="qrow" hidden></div>
+    <div id="m-absin" class="absin" hidden></div>
+    <div id="m-over" hidden></div>
+
+    <section class="squads" id="m-squads" aria-labelledby="sq-title" hidden>
+      <div class="sq-head">
+        <div>
+          <h3 class="qsub" id="sq-title">Squads</h3>
+          <p class="lead">Monte squads de 1 a 5 marcas: clique em <b>Novo squad</b> e adicione as marcas pela lista. O QLP sugerido do squad soma a necessidade das marcas e arredonda para cima; a distribuição indica quais marcas ficam com vendedor dedicado e quais dividem vendedor. Para ver e editar um squad, escolha-o em <b>Ver squad</b>, no topo.</p>
+        </div>
+        <button type="button" class="primary" id="sq-add">+ Novo squad</button>
+      </div>
+      <div class="sq-pool" data-drop="pool"><p class="sq-pool-t">Marcas sem squad, com os vendedores necessários de cada uma</p><div class="chips" id="sq-pool"></div></div>
+      <p class="sq-msg" id="sq-msg"></p>
+      <div class="sq-list" id="sq-list"></div>
+    </section>
+
+    <details class="edit-wrap" id="m-indiv">
+      <summary><span class="h-closed">Mostrar visão individual das marcas</span><span class="h-open">Ocultar visão individual das marcas</span><small>QLP, multimarca e produtividade de cada marca</small></summary>
+
+    <section aria-labelledby="mt-title">
+      <h3 class="qsub" id="mt-title">Calculadora de QLP por marca</h3>
+      <p class="lead">Vendedores necessários são as ligações por dia da marca divididas pela média atual de ligação por vendedor da própria marca. O QLP sugerido arredonda para cima os vendedores necessários; marcas que precisam de até 0,5 vendedor ficam com sugerido 0 e aparecem como multimarca na situação. Linhas em destaque têm QLP definido diferente do sugerido, ou seja, a decisão de trabalhar com mais ou menos vendedores do que a conta indica.</p>
+      <div class="tscroll"><table class="ct mt" id="m-table"></table></div>
+    </section>
+
+    <section id="m-multi" aria-labelledby="mm-title">
+      <h3 class="qsub" id="mm-title">Vendedores multimarca</h3>
+      <p class="lead">Marcas com QLP definido 0 são agrupadas em vendedores compartilhados, somando a necessidade de cada uma até completar 1 vendedor.</p>
+      <div class="msellers" id="m-sellers"></div>
+      <p class="mabs" id="m-abs"></p>
+    </section>
+
+    <section aria-labelledby="mp-title">
+      <h3 class="qsub" id="mp-title">Produtividade por vendedor</h3>
+      <p class="lead">A jornada de um vendedor de cada marca, com os tempos e rituais da Capacidade instalada da visão geral e <span data-o="mp-ratio2"></span> desqualificações para cada qualificação. As colunas de tempo estão em minutos por dia: contato com leads soma ligações, qualificação, desqualificação e nutrição; rituais somam 1:1 e alinhamentos, grito, treinamento e ADP.</p>
+      <div class="tscroll"><table class="ct mt mp" id="m-prod"></table></div>
+    </section>
+    </details>
+  </div>
+
+  
+<details class="edit-wrap hist-wrap" id="hist-wrap" hidden>
+    <summary><span class="h-closed">Mostrar histórico de alterações</span><span class="h-open">Ocultar histórico de alterações</span><small>Quem mudou o quê e quando, das mais recentes para as mais antigas</small></summary>
+    <div id="hist"><p class="empty">Nenhuma alteração registrada ainda.</p></div>
+  </details>
+<div class="dlg" id="name-dlg" hidden role="dialog" aria-modal="true" aria-labelledby="name-t">
+    <form class="dlg-box" id="name-form">
+      <h3 id="name-t">Como você quer aparecer no histórico?</h3>
+      <p>Seu nome fica registrado em cada alteração que você fizer na calculadora. Ele fica salvo só neste navegador.</p>
+      <input type="text" maxlength="60" placeholder="Seu nome" aria-label="Seu nome" autocomplete="name">
+      <div class="dlg-act"><button type="button" id="name-skip">Agora não</button><button type="submit" class="primary">Salvar</button></div>
+    </form>
+  </div>
+<div class="foot">
+    <span id="foot-note">As alterações ficam salvas neste navegador.</span>
+    <button type="button" id="reset">Restaurar valores padrão</button>
+  </div>
+</div>
+
+<script>
+const NUT_DEF = { diasNut: 7, sAbrir: 30, sCopiar: 15, sAjustar: 75, sEnviar: 25, sCrm: 35, pctResp: 40, minResp: 5 };
+const DEFAULTS = {
+  g: { dia: 528, meta: 80, semana: 5 },
+  atual: Object.assign({ lig: 132, minLig: 1, qual: 1, minQual: 15, desq: 3, minDesq: 3, grito: 20, trein: 40, umum: 35, adp: 15, web: 60, pitch: 20 }, NUT_DEF),
+  ideal: Object.assign({ lig: 105, minLig: 1, qual: 3, minQual: 15, desq: 9, minDesq: 3, grito: 20, trein: 40, umum: 35, adp: 15, web: 60, pitch: 20 }, NUT_DEF)
+};
+DEFAULTS.qlp = { qlp: 20, dias: 22, metaWeb: 10, cadencia: 8, mediaAtual: 132, metaAbertura: 449, convGeral: 1, convAbertura: 10, ticket: 34000 };
+DEFAULTS.squads = [{"id": "s1", "nome": "Squad 1", "marcas": ["Ecoville"]}, {"id": "s2", "nome": "Squad 2", "marcas": ["Fast Tennis", "Mestre da Obra", "Mestre das Tintas"]}, {"id": "s3", "nome": "Squad 3", "marcas": ["Maria Express / Profissional", "Doctor Fit", "Agilipet (nova)"]}, {"id": "s4", "nome": "Squad 4", "marcas": ["Da1duche (nova)"]}, {"id": "s5", "nome": "Squad 5", "marcas": ["Airlocker", "Shelf"]}, {"id": "s6", "nome": "Squad 6", "marcas": ["Brumed", "Saúde Livre Vacinas", "NeoX Radiologia", "Locar-X"]}, {"id": "s7", "nome": "Squad 7", "marcas": ["La Bolaria"]}];
+DEFAULTS.abs = { meses: [ { n: 'Agosto', v: 7.54 }, { n: 'Setembro', v: 8.90 }, { n: 'Outubro', v: 13.03 } ] };
+DEFAULTS.mk = { ratio: 3, filtro: 'todas', list: [
+  { n: 'Ecoville', leads: 409, meta: 204255, qlp: 2 },
+  { n: 'Fast Tennis', leads: 397, meta: 238296, qlp: 2 },
+  { n: 'Maria Express / Profissional', leads: 272, meta: 68085, qlp: 1 },
+  { n: 'Mestre da Obra', leads: 272, meta: 136170, qlp: 1 },
+  { n: 'Doctor Fit', leads: 85, meta: 34043, qlp: 0 },
+  { n: 'Mestre das Tintas', leads: 204, meta: 68085, qlp: 1 },
+  { n: 'Da1duche (nova)', leads: 681, meta: 136170, qlp: 2 },
+  { n: 'Agilipet (nova)', leads: 340, meta: 68085, qlp: 1 },
+  { n: 'Airlocker', leads: 531, meta: 170213, qlp: 2 },
+  { n: 'La Bolaria', leads: 426, meta: 170213, qlp: 2 },
+  { n: 'Brumed', leads: 426, meta: 170213, qlp: 2 },
+  { n: 'Saúde Livre Vacinas', leads: 68, meta: 34043, qlp: 0 },
+  { n: 'NeoX Radiologia', leads: 68, meta: 34043, qlp: 0 },
+  { n: 'Shelf', leads: 136, meta: 34043, qlp: 0 },
+  { n: 'Locar-X', leads: 68, meta: 34043, qlp: 0 }
+] };
+// premissas próprias de cada marca (cópia inicial, sem vínculo com a Calculadora de QLP)
+const MK_PREM = { dias: 22, metaWeb: 10, cadencia: 8, mediaAtual: 132, convGeral: 1, convAbertura: 10 };
+DEFAULTS.mk.list = DEFAULTS.mk.list.map(m => Object.assign({}, MK_PREM, m));
+const SCENS = [ { id: 'atual', nome: 'Cenário atual' }, { id: 'ideal', nome: 'Capacidade instalada' } ];
+const ACTS = [
+  { k: 'lig',   nome: 'Ligações',           grupo: 'c' },
+  { k: 'qual',  nome: 'Qualificação',       grupo: 'c' },
+  { k: 'desq',  nome: 'Desqualificação',    grupo: 'c' },
+  { k: 'nut',   nome: 'Nutrição',           grupo: 'c' },
+  { k: 'web',   nome: 'Webinar e pitch',    grupo: 'c' },
+  { k: 'umum',  nome: '1:1 e alinhamentos', grupo: 'r' },
+  { k: 'grito', nome: 'Grito',              grupo: 'r' },
+  { k: 'trein', nome: 'Treinamentos',       grupo: 'r' },
+  { k: 'adp',   nome: 'ADP e prestação de contas', grupo: 'r' }
+];
+const GROUPS = { c: 'Tempo comercial', r: 'Rituais' };
+const KEY = 'calc-tripulacao-300-cenario-1600k-fb';
+
+let state;
+try { state = JSON.parse(localStorage.getItem(KEY)); } catch (e) { state = null; }
+if (!state || !state.g || !state.atual || !state.ideal) state = JSON.parse(JSON.stringify(DEFAULTS));
+if (!state.qlp || state.qlp.metaAbertura === undefined) state.qlp = JSON.parse(JSON.stringify(DEFAULTS.qlp));
+if (!state.mk || !Array.isArray(state.mk.list)) state.mk = JSON.parse(JSON.stringify(DEFAULTS.mk));
+['atual', 'ideal'].forEach(k => { if (state[k].adp === undefined) state[k].adp = 15; });
+if (!Array.isArray(state.squads)) state.squads = JSON.parse(JSON.stringify(DEFAULTS.squads));
+delete state.qlp.contato;
+if (!state.abs || !Array.isArray(state.abs.meses)) state.abs = JSON.parse(JSON.stringify(DEFAULTS.abs));
+state.mk.list.forEach(m => { Object.keys(MK_PREM).forEach(k => { if (m[k] === undefined) m[k] = state.qlp[k] !== undefined ? state.qlp[k] : MK_PREM[k]; }); });
+if (typeof state.mk.filtro !== 'string') state.mk.filtro = 'todas';
+function saveLocal(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+function save(){ saveLocal(); if (typeof queueShared === 'function') queueShared(); }
+
+const nf = (n, d = 1) => new Intl.NumberFormat('pt-BR', { maximumFractionDigits: d, minimumFractionDigits: 0 }).format(n);
+const pf = n => new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n * 100);
+function hm(min){
+  let h = Math.floor(min / 60), m = Math.round(min - h * 60);
+  if (m === 60) { h += 1; m = 0; }
+  return h + ' h' + (m ? ' ' + String(m).padStart(2, '0') + ' min' : '');
+}
+const num = v => { const x = parseFloat(v); return isFinite(x) && x > 0 ? x : 0; };
+
+function calc(s){
+  const g = state.g;
+  const leads = num(s.qual) * num(s.diasNut);
+  const envio = (num(s.sAbrir) + num(s.sCopiar) + num(s.sAjustar) + num(s.sEnviar) + num(s.sCrm)) / 60;
+  const inter = Math.min(num(s.pctResp), 100) / 100 * num(s.minResp);
+  const tLead = envio + inter;
+  const m = {
+    lig: num(s.lig) * num(s.minLig),
+    qual: num(s.qual) * num(s.minQual),
+    desq: num(s.desq) * num(s.minDesq),
+    nut: leads * tLead,
+    web: num(s.web) + num(s.pitch),
+    umum: num(s.umum),
+    grito: num(s.grito),
+    trein: num(s.trein) / (num(g.semana) || 1),
+    adp: num(s.adp)
+  };
+  const com = m.lig + m.qual + m.desq + m.nut + m.web;
+  const rit = m.umum + m.grito + m.trein + m.adp;
+  const total = com + rit;
+  const dia = num(g.dia) || 1;
+  return { m, leads, envio, inter, tLead, com, rit, total, livre: Math.max(0, dia - total), pct: total / dia, dia };
+}
+
+/* ---------- Premissas ---------- */
+const ARIA = { lig:'Ligações por dia', minLig:'Minutos por ligação', qual:'Qualificações por dia', minQual:'Minutos por qualificação', desq:'Desqualificações por dia', minDesq:'Minutos por desqualificação', diasNut:'Dias de nutrição por lead', sAbrir:'Segundos para abrir a conversa', sCopiar:'Segundos para copiar e colar', sAjustar:'Segundos para ajustar pontos-chave', sEnviar:'Segundos para anexar e enviar', sCrm:'Segundos para registrar no CRM', pctResp:'Porcentagem de leads que respondem', minResp:'Minutos por conversa', web:'Minutos de webinar e preparação', pitch:'Minutos de pitch', umum:'Minutos de 1:1 e alinhamentos', grito:'Minutos de grito', trein:'Minutos de treinamento por semana', adp:'Minutos de ADP e prestação de contas' };
+const inp = (sc, f, cls = 'w-s') => `<input type="number" min="0" step="any" class="${cls}" data-s="${sc}" data-f="${f}">`;
+const der = (sc, n) => `<b data-d="${sc}-${n}"></b>`;
+const RULES = {
+  lig:   sc => `${inp(sc,'lig','')} ligações por dia × ${inp(sc,'minLig')} min cada`,
+  qual:  sc => `${inp(sc,'qual')} qualificações por dia × ${inp(sc,'minQual')} min cada`,
+  desq:  sc => `${inp(sc,'desq')} desqualificações por dia × ${inp(sc,'minDesq')} min cada`,
+  nut:   sc => `${der(sc,'leads')} leads por dia × ${der(sc,'tlead')} por lead
+    <details class="nut-wrap">
+    <summary><span class="h-closed">Mostrar detalhes da nutrição</span><span class="h-open">Ocultar detalhes da nutrição</span></summary>
+    <div class="nut">
+      <p class="nut-sec">Carteira em nutrição</p>
+      <div class="nl"><span>Qualificados por dia (vem da qualificação)</span>${der(sc,'qual')}</div>
+      <div class="nl"><span>Dias de nutrição por lead (D+)</span>${inp(sc,'diasNut')}</div>
+      <div class="nl res"><span>Leads para alimentar por dia</span>${der(sc,'leads2')}</div>
+      <p class="nut-sec">Envio do material, por lead (segundos)</p>
+      <div class="nl"><span>Abrir a conversa e conferir o histórico</span>${inp(sc,'sAbrir')}</div>
+      <div class="nl"><span>Copiar e colar a mensagem do dia</span>${inp(sc,'sCopiar')}</div>
+      <div class="nl"><span>Ajustar pontos-chave (nome, marca, contexto)</span>${inp(sc,'sAjustar')}</div>
+      <div class="nl"><span>Anexar e enviar o material</span>${inp(sc,'sEnviar')}</div>
+      <div class="nl"><span>Registrar o toque no CRM</span>${inp(sc,'sCrm')}</div>
+      <div class="nl res"><span>Tempo de envio</span>${der(sc,'envio')}</div>
+      <p class="nut-sec">Interação com quem responde</p>
+      <div class="nl"><span>Leads que respondem e pedem conversa</span><span>${inp(sc,'pctResp')} %</span></div>
+      <div class="nl"><span>Minutos por conversa</span>${inp(sc,'minResp')}</div>
+      <div class="nl res"><span>Interação média por lead</span>${der(sc,'inter')}</div>
+      <div class="nl tot"><span>Tempo médio por lead</span>${der(sc,'tlead2')}</div>
+      <p class="nut-note">Cenário intermediário: a maioria só recebe o material, e uma parte responde e pede uma troca curta. A carteira considera a operação já em ritmo, depois dos primeiros ${der(sc,'dias')} dias.</p>
+    </div>
+    </details>`,
+  web:   sc => `${inp(sc,'web')} min de webinar e preparação + ${inp(sc,'pitch')} min de pitch`,
+  umum:  sc => `${inp(sc,'umum')} min de 1:1 e reuniões de diretoria por dia`,
+  grito: sc => `${inp(sc,'grito')} min de grito diário`,
+  trein: sc => `${inp(sc,'trein')} min por semana, divididos em ${der(sc,'semana')} dias úteis`,
+  adp:   sc => `${inp(sc,'adp')} min por dia de preenchimento de ADP e prestação de contas`
+};
+
+/* ---------- Tabela ---------- */
+const TROWS = [
+  { sec: 'Volume do dia' },
+  { k: 'v-lig',   nome: 'Ligações',                      v: (s,r) => num(s.lig),  fmt: 'n' },
+  { k: 'v-qual',  nome: 'Qualificações',                 v: (s,r) => num(s.qual), fmt: 'n' },
+  { k: 'v-desq',  nome: 'Desqualificações',              v: (s,r) => num(s.desq), fmt: 'n' },
+  { k: 'v-leads', nome: 'Leads em nutrição',             v: (s,r) => r.leads,     fmt: 'n' },
+  { k: 'v-tlead', nome: 'Tempo médio por lead nutrido',  v: (s,r) => r.tLead,     fmt: 'm' },
+  { sec: 'Minutos por atividade' },
+  { k: 'a-lig',   nome: 'Ligações',        v: (s,r) => r.m.lig,   fmt: 'm', pr: (s,r) => `${nf(num(s.lig))} × ${nf(num(s.minLig))} min` },
+  { k: 'a-qual',  nome: 'Qualificação',    v: (s,r) => r.m.qual,  fmt: 'm', pr: (s,r) => `${nf(num(s.qual))} × ${nf(num(s.minQual))} min` },
+  { k: 'a-desq',  nome: 'Desqualificação', v: (s,r) => r.m.desq,  fmt: 'm', pr: (s,r) => `${nf(num(s.desq))} × ${nf(num(s.minDesq))} min` },
+  { k: 'a-nut',   nome: 'Nutrição',        v: (s,r) => r.m.nut,   fmt: 'm', pr: (s,r) => `${nf(r.leads)} leads × ${nf(r.tLead,1)} min` },
+  { k: 'a-web',   nome: 'Webinar e pitch', v: (s,r) => r.m.web,   fmt: 'm', pr: (s,r) => `${nf(num(s.web))} + ${nf(num(s.pitch))} min` },
+  { k: 's-com',   nome: 'Tempo comercial', v: (s,r) => r.com,     fmt: 'm', cls: 'sub' },
+  { k: 'a-umum',  nome: '1:1 e alinhamentos', v: (s,r) => r.m.umum,  fmt: 'm' },
+  { k: 'a-grito', nome: 'Grito',              v: (s,r) => r.m.grito, fmt: 'm' },
+  { k: 'a-trein', nome: 'Treinamentos',       v: (s,r) => r.m.trein, fmt: 'm', pr: (s,r) => `${nf(num(s.trein))} min/semana` },
+  { k: 'a-adp',   nome: 'ADP e prestação de contas', v: (s,r) => r.m.adp, fmt: 'm' },
+  { k: 's-rit',   nome: 'Rituais',            v: (s,r) => r.rit,     fmt: 'm', cls: 'sub' },
+  { sec: 'Resultado da jornada' },
+  { k: 'r-tot',   nome: 'Minutos produtivos', v: (s,r) => r.total, fmt: 'm', pr: (s,r) => hm(r.total) },
+  { k: 'r-livre', nome: 'Tempo livre',        v: (s,r) => r.livre, fmt: 'm' },
+  { k: 'r-pct',   nome: '% produtivo',        v: (s,r) => r.pct,   fmt: 'p', cls: 'key', pr: (s,r) => r.pct + 1e-9 >= num(state.g.meta) / 100 ? 'Meta atingida' : `Meta de ${nf(num(state.g.meta))}%` }
+];
+function fmtV(v, f){
+  if (f === 'p') return `${pf(v)}<small>%</small>`;
+  if (f === 'm') return `${nf(v, 1)}<small>min</small>`;
+  return nf(v, 1);
+}
+function fmtD(d, f){
+  if (f === 'p') d = d * 100;
+  if (Math.abs(d) < 0.05) return '<span class="chip eq">igual</span>';
+  const un = f === 'p' ? ' p.p.' : f === 'm' ? ' min' : '';
+  const mult = '';
+  return `<span class="chip ${d > 0 ? 'up' : 'down'}">${d > 0 ? '▲ +' : '▼ −'}${nf(Math.abs(d), 1)}${un}</span>`;
+}
+
+/* ---------- Montagem ---------- */
+function build(){
+  document.getElementById('kpis').innerHTML = SCENS.map(s => `
+    <article class="kpi kpi-${s.id}">
+      <p class="scen-name">${s.nome}</p>
+      <p class="scen-pct" data-o="${s.id}-pct"></p>
+      <div class="prog" role="img" data-o="${s.id}-prog">
+        <div class="prog-fill" data-o="${s.id}-fill"></div>
+        <div class="prog-meta" data-o="${s.id}-meta"><span></span></div>
+      </div>
+      <div class="scale"><span>0 min</span><span data-o="${s.id}-scale"></span></div>
+      <p class="scen-status" data-o="${s.id}-status"></p>
+    </article>`).join('');
+
+  document.getElementById('ct').innerHTML = `
+    <colgroup><col class="c-act"><col class="c-val"><col class="c-val"><col class="c-dif"></colgroup>
+    <thead><tr><th scope="col">Indicador</th><th scope="col" class="h-atual">Cenário atual</th><th scope="col" class="h-ideal">Capacidade instalada</th><th scope="col">Diferença</th></tr></thead>
+    <tbody>${TROWS.map(r => r.sec
+      ? `<tr class="sec"><td colspan="4">${r.sec}</td></tr>`
+      : `<tr class="${r.cls || ''}"><td class="nm">${r.nome}</td>${SCENS.map(s => `<td class="v-${s.id}"><span class="val" data-o="t-${s.id}-${r.k}"></span>${r.pr ? `<span class="pr" data-o="tp-${s.id}-${r.k}"></span>` : ''}</td>`).join('')}<td data-o="td-${r.k}"></td></tr>`
+    ).join('')}</tbody>`;
+
+  document.getElementById('editors').innerHTML = SCENS.map(s => `
+    <article class="editor editor-${s.id}">
+      <div class="editor-head"><h3>${s.nome}</h3><span>Premissas editáveis</span></div>
+      ${['c','r'].map(gk => `
+        <div class="group">
+          <div class="group-head"><span>${GROUPS[gk]}</span><span data-o="${s.id}-g${gk}"></span></div>
+          ${ACTS.filter(a => a.grupo === gk).map(a => `
+            <div class="row">
+              <span class="row-name">${a.nome}</span>
+              <span class="row-min" data-o="${s.id}-m-${a.k}"></span>
+              <div class="row-rule">${RULES[a.k](s.id)}</div>
+            </div>`).join('')}
+        </div>`).join('')}
+      <dl class="totals">
+        <div class="tot-box"><dt>Minutos produtivos</dt><dd data-o="${s.id}-tot"></dd></div>
+        <div class="tot-box"><dt>Horas</dt><dd data-o="${s.id}-hrs"></dd></div>
+        <div class="tot-box" data-o="${s.id}-pctbox"><dt>% produtivo</dt><dd data-o="${s.id}-pct2"></dd></div>
+      </dl>
+    </article>`).join('');
+
+  document.querySelectorAll('input[data-f]').forEach(el => {
+    el.value = state[el.dataset.s][el.dataset.f];
+    el.setAttribute('aria-label', ARIA[el.dataset.f] + ', ' + (el.dataset.s === 'atual' ? 'cenário atual' : 'capacidade instalada'));
+    el.addEventListener('input', () => { state[el.dataset.s][el.dataset.f] = el.value === '' ? 0 : parseFloat(el.value); save(); render(); });
+  });
+  document.querySelectorAll('input[data-g]').forEach(el => {
+    el.value = state.g[el.dataset.g];
+    if (el.dataset.bound) return; el.dataset.bound = '1';
+    el.addEventListener('input', () => { state.g[el.dataset.g] = el.value === '' ? 0 : parseFloat(el.value); save(); render(); });
+  });
+}
+
+/* ---------- Cálculo e desenho ---------- */
+const $o = id => document.querySelector(`[data-o="${id}"]`);
+const $d = id => document.querySelector(`[data-d="${id}"]`);
+
+function render(){
+  const g = state.g;
+  const meta = num(g.meta) / 100;
+  const res = {};
+  SCENS.forEach(s => { res[s.id] = calc(state[s.id]); });
+
+  document.getElementById('day-sub').textContent =
+    `Quanto da jornada de ${nf(num(g.dia),0)} minutos cada cenário ocupa com atividades. A linha tracejada é a meta de ${nf(num(g.meta),1)}%.`;
+
+  // tabela
+  TROWS.filter(r => !r.sec).forEach(r => {
+    const vals = {};
+    SCENS.forEach(s => {
+      vals[s.id] = r.v(state[s.id], res[s.id]);
+      $o(`t-${s.id}-${r.k}`).innerHTML = fmtV(vals[s.id], r.fmt);
+      if (r.pr) $o(`tp-${s.id}-${r.k}`).textContent = r.pr(state[s.id], res[s.id]);
+    });
+    $o(`td-${r.k}`).innerHTML = fmtD(vals.ideal - vals.atual, r.fmt);
+  });
+
+  SCENS.forEach(s => {
+    const r = res[s.id], st = state[s.id];
+    // indicador
+    $o(s.id + '-fill').style.width = Math.min(100, r.pct * 100) + '%';
+    const mk = $o(s.id + '-meta');
+    mk.style.left = Math.min(100, meta * 100) + '%';
+    mk.querySelector('span').textContent = `Meta ${nf(num(g.meta),1)}%`;
+    $o(s.id + '-scale').textContent = `${nf(r.dia,0)} min`;
+    $o(s.id + '-prog').setAttribute('aria-label', `${s.nome}: ${pf(r.pct)}% da jornada ocupada, meta de ${nf(num(g.meta),1)}%`);
+    $o(s.id + '-pct').innerHTML = `${pf(r.pct)}<small>%</small>`;
+    const gap = meta * r.dia - r.total;
+    let status;
+    if (r.total > r.dia) status = `<strong>Passa da jornada em ${nf(r.total - r.dia,0)} min.</strong>`;
+    else if (gap > 0.05) {
+      const ml = num(st.minLig);
+      const ligs = ml > 0 ? ` Equivale a cerca de <strong>${nf(Math.floor(gap / ml),0)} ligações</strong> a mais por dia.` : '';
+      status = `Faltam <strong>${nf(gap,0)} min</strong> para a meta.${ligs}`;
+    } else status = `<strong>Meta atingida</strong>, ${nf(-gap,0)} min acima. Sobram ${nf(r.livre,0)} min livres na jornada.`;
+    $o(s.id + '-status').innerHTML = `${nf(r.total,0)} min produtivos, ${hm(r.total)}. ` + status;
+
+    // premissas
+    ACTS.forEach(a => { $o(`${s.id}-m-${a.k}`).innerHTML = `${nf(r.m[a.k],1)}<small>min</small>`; });
+    $d(s.id + '-leads').textContent = nf(r.leads, 1);
+    $d(s.id + '-leads2').textContent = nf(r.leads, 1) + ' leads';
+    $d(s.id + '-qual').textContent = nf(num(st.qual), 1);
+    $d(s.id + '-dias').textContent = nf(num(st.diasNut), 0);
+    $d(s.id + '-envio').textContent = nf(r.envio, 2) + ' min';
+    $d(s.id + '-inter').textContent = nf(r.inter, 2) + ' min';
+    $d(s.id + '-tlead').textContent = nf(r.tLead, 2) + ' min';
+    $d(s.id + '-tlead2').textContent = nf(r.tLead, 2) + ' min';
+    $d(s.id + '-semana').textContent = nf(num(g.semana), 0);
+    $o(s.id + '-gc').textContent = `${nf(r.com,1)} min (${pf(r.com / r.dia)}%)`;
+    $o(s.id + '-gr').textContent = `${nf(r.rit,1)} min (${pf(r.rit / r.dia)}%)`;
+    $o(s.id + '-tot').textContent = nf(r.total, 1);
+    $o(s.id + '-hrs').textContent = nf(r.total / 60, 2);
+    $o(s.id + '-pct2').textContent = pf(r.pct) + '%';
+    $o(s.id + '-pctbox').classList.toggle('hit', r.pct + 1e-9 >= meta);
+  });
+
+  // resumo
+  const a = res.atual, i = res.ideal;
+  const dMin = i.total - a.total, dPts = (i.pct - a.pct) * 100;
+  const sg = v => (v > 0 ? '+' : v < 0 ? '−' : '') + nf(Math.abs(v), 1);
+  const qa = num(state.atual.qual), qi = num(state.ideal.qual);
+  const mult = qa > 0 ? ` (${nf(qi / qa, 1)}×)` : '';
+  if (document.getElementById('delta')) document.getElementById('delta').innerHTML =
+    `Em resumo: a capacidade instalada usa <strong>${sg(dMin)} min produtivos</strong> por dia (${sg(dPts)} pontos percentuais), com ${nf(qi,1)} qualificações por dia em vez de ${nf(qa,1)}${mult} e ${nf(i.leads,1)} leads em nutrição em vez de ${nf(a.leads,1)}.`;
+}
+
+/* ---------- Calculadora de QLP ---------- */
+const isMoney = el => el.hasAttribute('data-money');
+const getVal = el => {
+  if (isMoney(el)) { const x = parseFloat(el.value.replace(/[R$\s.]/g, '').replace(',', '.')); return isFinite(x) ? x : 0; }
+  return el.value === '' ? 0 : parseFloat(el.value);
+};
+const setVal = (el, v) => { el.value = isMoney(el) ? new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(num(v)) : v; };
+document.addEventListener('focusout', e => { if (e.target.matches && e.target.matches('input[data-money]')) setVal(e.target, getVal(e.target)); });
+const brl = (n, d = 2) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
+const Q_FIELDS = {
+  qlp: ['QLP aproximado', 'vend.'],
+  dias: ['Dias úteis', 'dias'],
+  metaWeb: ['% meta convidado webinar', '%'],
+  cadencia: ['Cadência de ligação por lead', 'ligações'],
+  mediaAtual: ['Média atual de ligação por vendedor', 'por dia', false, true],
+  metaAbertura: ['Meta de abertura', 'qualificados'],
+  convGeral: ['Conversão geral', '%', true],
+  convAbertura: ['Conversão sobre abertura', '%'],
+  ticket: ['Ticket médio', 'R$', false, true]
+};
+const Q_CALC = { lig: 'Total de ligações', leads: 'Leads em contato', mlig: 'Meta de ligação por vendedor', pot: 'Potencial de faturamento' };
+const Q_ROWS = [
+  { t: 'Premissas do time', cells: ['qlp', 'dias', 'metaWeb', 'cadencia', 'mediaAtual'] },
+  { t: 'Volume e meta', cells: ['=lig', '=leads', 'metaAbertura*', '=mlig'] },
+  { t: 'Receita', cells: ['=pot', 'convGeral', 'convAbertura', 'ticket'] }
+];
+function qcell(k){
+  if (k.startsWith('=')) {
+    k = k.slice(1);
+    return `<div class="qc calc${k === 'mlig' ? ' out-key' : ''}"><span class="qc-l">${Q_CALC[k]}</span><span class="qc-n" data-o="qk-${k}"></span><span class="qc-f" data-o="qkf-${k}"></span></div>`;
+  }
+  const key = k.endsWith('*'); if (key) k = k.slice(0, -1);
+  const [label, unit, ref, base] = Q_FIELDS[k];
+  const pre = unit === 'R$';
+  return `<label class="qc${key ? ' in-key' : ''}${base ? ' is-base' : ''}"><span class="qc-l">${label}${ref ? '<span class="ref" title="Fica registrado aqui, mas não entra nos cálculos">referência</span>' : ''}${base ? '<span class="ref base-tag" title="Valor atual da empresa, usado como base">valor base</span>' : ''}</span><span class="qc-v">${pre ? '<span class="cur">R$</span>' : ''}<input ${pre ? 'type="text" inputmode="decimal" data-money' : 'type="number" min="0" step="any"'} data-q="${k}" aria-label="${label}">${pre ? '' : unit}</span></label>`;
+}
+function calcQ(){
+  const q = state.qlp;
+  const leads = num(q.metaWeb) > 0 ? num(q.metaAbertura) / (num(q.metaWeb) / 100) : 0;
+  const lig = leads * num(q.cadencia);
+  const mlig = num(q.qlp) > 0 && num(q.dias) > 0 ? lig / num(q.qlp) / num(q.dias) : 0;
+  const pot = num(q.metaAbertura) * num(q.convAbertura) / 100 * num(q.ticket);
+  return { leads, lig, mlig, pot };
+}
+function buildQ(){
+  document.getElementById('q-calc').innerHTML = Q_ROWS.map(r =>
+    `<div class="qrow"><p class="qrow-t">${r.t}</p><div class="qcells">${r.cells.map(qcell).join('')}</div></div>`).join('');
+  document.querySelectorAll('input[data-q]').forEach(el => {
+    setVal(el, state.qlp[el.dataset.q]);
+    el.addEventListener('input', () => { state.qlp[el.dataset.q] = getVal(el); save(); renderQ(); });
+  });
+}
+function renderQ(){
+  document.querySelectorAll('input[data-q]').forEach(el => { if (el !== document.activeElement) setVal(el, state.qlp[el.dataset.q]); });
+  const q = state.qlp, r = calcQ();
+  $o('qk-lig').textContent = nf(r.lig, 0);
+  $o('qkf-lig').textContent = `${nf(r.leads, 0)} leads × ${nf(num(q.cadencia), 1)} ligações`;
+  $o('qk-leads').textContent = nf(r.leads, 0);
+  $o('qkf-leads').textContent = `${nf(num(q.metaAbertura), 0)} aberturas ÷ ${nf(num(q.metaWeb), 2)}%`;
+  $o('qk-mlig').textContent = nf(r.mlig, 0);
+  const dif = num(q.mediaAtual) - r.mlig;
+  const cmp = Math.abs(dif) < 0.5 ? 'igual à meta' : dif > 0 ? `${nf(dif, 0)} acima da meta` : `${nf(-dif, 0)} abaixo da meta`;
+  $o('qkf-mlig').textContent = `${nf(r.lig, 0)} ÷ ${nf(num(q.qlp), 0)} vendedores ÷ ${nf(num(q.dias), 0)} dias. Média atual de ${nf(num(q.mediaAtual), 0)}, ${cmp}.`;
+  $o('qk-pot').textContent = brl(r.pot, 0);
+  $o('qkf-pot').textContent = `${nf(num(q.metaAbertura), 0)} aberturas × ${nf(num(q.convAbertura), 2)}% × ${brl(num(q.ticket), 0)}`;
+}
+
+/* ---------- Por marca ---------- */
+const f2 = n => (isFinite(n) ? n : 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let mBuilt = false;
+
+/* nome do squad com as marcas entre parênteses */
+const sqBrands = sq => sq.marcas.length ? `(${sq.marcas.join(', ')})` : '(sem marcas)';
+const sqTxt = sq => `${sq.nome} ${sqBrands(sq)}`;
+const sqHtml = sq => `<span data-sqnm="${esc(sq.id)}">${esc(sq.nome)}</span> <span class="sq-br">${esc(sqBrands(sq))}</span>`;
+const sqOf = n => state.squads.find(x => x.marcas.includes(n));
+
+function pack(items){
+  const sellers = [];
+  items.slice().sort((a, b) => b.need - a.need).forEach(r => {
+    let s = sellers.find(x => x.load + r.need <= 1 + 1e-9);
+    if (!s) { s = { load: 0, brands: [] }; sellers.push(s); }
+    s.load += r.need; s.brands.push(r);
+  });
+  return sellers;
+}
+function prodFor(ligDia, qualDia){
+  return calc(Object.assign({}, state.ideal, { lig: ligDia, qual: qualDia, desq: qualDia * num(state.mk.ratio) }));
+}
+function totOf(rows){
+  const sum = f => rows.reduce((a, r) => a + r[f], 0);
+  const tms = rows.filter(r => r.tm > 0).map(r => r.tm);
+  const t = { leads: sum('leads'), qual: sum('qual'), meta: sum('meta'), lig: sum('lig'), ligD: sum('ligD'), qualD: sum('qualD'),
+    need: sum('need'), sug: sum('sug'), def: sum('def'), tm: tms.length ? tms.reduce((a, b) => a + b, 0) / tms.length : 0 };
+  t.mlig = t.def > 0 ? t.ligD / t.def : null;
+  return t;
+}
+/* Cada marca usa a lógica da Calculadora de QLP com as suas próprias premissas */
+function calcM(){
+  const rows = state.mk.list.map((m, i) => {
+    const leads = num(m.leads), dias = num(m.dias), pq = num(m.metaWeb) / 100, conv = num(m.convAbertura) / 100;
+    const cad = num(m.cadencia), cap = num(m.mediaAtual), meta = num(m.meta);
+    const qual = leads * pq;            // meta de abertura da marca
+    const lig = leads * cad;            // total de ligações da marca no mês
+    const ligD = dias > 0 ? lig / dias : 0, qualD = dias > 0 ? qual / dias : 0;
+    const need = cap > 0 ? ligD / cap : 0;
+    const sug = need > 0.5 ? Math.ceil(need - 1e-9) : 0;
+    const def = num(m.qlp);
+    return {
+      i, n: m.n, leads, qual, meta, lig, ligD, qualD, dias, pq, conv, cad, cap, need, sug, def, folga: def - need,
+      tm: qual * conv > 0 ? meta / (qual * conv) : 0,
+      mlig: def > 0 && dias > 0 ? ligD / def : null,
+      multi: def === 0 && need > 0, sugMulti: sug === 0 && need > 0
+    };
+  });
+  const sellers = pack(rows.filter(r => r.multi));
+  sellers.forEach((s, k) => {
+    s.id = k + 1;
+    s.brands.forEach(r => { r.seller = s; });
+    s.lig = s.brands.reduce((a, r) => a + r.lig, 0);
+    s.qual = s.brands.reduce((a, r) => a + r.qual, 0);
+    s.ligDia = s.brands.reduce((a, r) => a + r.ligD, 0);
+    s.qualDia = s.brands.reduce((a, r) => a + r.qualD, 0);
+    s.p = prodFor(s.ligDia, s.qualDia);
+  });
+  const sugSellers = pack(rows.filter(r => r.sugMulti));
+  const minMulti = rows.filter(r => r.multi).reduce((a, r) => Math.min(a, r.need), Infinity);
+  rows.forEach(r => {
+    r.absorb = isFinite(minMulti) && r.def > 0 && r.folga >= minMulti - 1e-9;
+    if (r.def > 0) { r.ligDia = r.ligD / r.def; r.qualDia = r.qualD / r.def; r.p = prodFor(r.ligDia, r.qualDia); }
+  });
+  return { rows, sellers, sugSellers, tot: totOf(rows) };
+}
+
+/* Visão escolhida no seletor: todas, uma marca ou um squad */
+function mView(){
+  const f = state.mk.filtro || 'todas', list = state.mk.list;
+  if (f.startsWith('sq:')) {
+    const sq = state.squads.find(x => 'sq:' + x.id === f);
+    if (sq) return { t: 'sq', sq, idxs: sq.marcas.map(n => list.findIndex(m => m.n === n)).filter(i => i >= 0) };
+  }
+  return { t: 'all', idxs: list.map((_, i) => i) };
+}
+
+const M_LABEL = { leads: 'Meta de leads', meta: 'Meta financeira em reais', qlp: 'QLP definido', dias: 'Dias úteis', metaWeb: '% meta convidado webinar', cadencia: 'Cadência de ligação por lead', mediaAtual: 'Média atual de ligação por vendedor', convGeral: 'Conversão geral', convAbertura: 'Conversão sobre abertura' };
+function mIn(i, f, label, unit, o = {}){
+  const pre = unit === 'R$';
+  return `<label class="qc${o.key ? ' in-key' : ''}${o.base ? ' is-base' : ''}"><span class="qc-l">${label}${o.ref ? '<span class="ref" title="Fica registrado aqui, mas não entra nos cálculos">referência</span>' : ''}${o.base ? '<span class="ref base-tag" title="Valor atual da marca, usado como base para os vendedores necessários">valor base</span>' : ''}</span><span class="qc-v">${pre ? '<span class="cur">R$</span>' : ''}<input ${pre ? 'type="text" inputmode="decimal" data-money' : 'type="number" min="0" step="any"'} data-mk="${i}-${f}" aria-label="${label}, ${esc(state.mk.list[i].n)}">${pre ? '' : unit}</span></label>`;
+}
+const mCalc = (k, label, dark) => `<div class="qc calc${dark ? ' out-key' : ''}"><span class="qc-l">${label}</span><span class="qc-n" data-o="md-${k}"></span><span class="qc-f" data-o="mdf-${k}"></span></div>`;
+const mInT = (i, f, cls = '') => {
+  const m = f === 'meta';
+  const inp = `<input ${m ? 'type="text" inputmode="decimal" data-money' : 'type="number" min="0" step="any"'} class="${cls}" data-mk="${i}-${f}" aria-label="${M_LABEL[f]}, ${esc(state.mk.list[i].n)}">`;
+  return m ? `<span class="money"><span class="cur">R$</span>${inp}</span>` : inp;
+};
+
+function buildFilter(){
+  const sel = document.getElementById('m-filter');
+  const sqs = state.squads;
+  sel.innerHTML = `<option value="todas">Todas as marcas</option>`
+    + (sqs.length ? `<optgroup label="Squads">${sqs.map(x => `<option value="sq:${esc(x.id)}">${esc(sqTxt(x))}</option>`).join('')}</optgroup>` : '');
+  sel.value = state.mk.filtro;
+  document.getElementById('m-filter-l').textContent = 'Ver squad';
+  sel.disabled = !sqs.length;
+  sel.title = sqs.length ? '' : 'Monte um squad para filtrar por ele';
+}
+
+function buildM(){
+  const V = mView();
+  if (V.t === 'all') state.mk.filtro = 'todas';
+  const one = V.t === 'one' ? V.i : -1;
+  const idxs = V.idxs;
+  buildFilter();
+
+  // contexto da visão
+  const ctx = document.getElementById('m-ctx');
+  if (V.t === 'sq') ctx.innerHTML = `Visão do squad <b>${sqHtml(V.sq)}</b>: ${V.sq.marcas.length} ${V.sq.marcas.length === 1 ? 'marca' : 'marcas'}.`;
+  else if (one >= 0 && sqOf(state.mk.list[one].n)) ctx.innerHTML = `Esta marca faz parte do <b>${sqHtml(sqOf(state.mk.list[one].n))}</b>.`;
+  else ctx.innerHTML = '';
+
+  document.getElementById('m-note').innerHTML = `
+    <div class="mnote">
+      <span>${one >= 0
+        ? 'Premissas próprias desta marca, separadas da Calculadora de QLP da visão geral.'
+        : 'Cada marca tem premissas próprias, separadas da Calculadora de QLP da visão geral. Para ver uma marca sozinha, monte um squad só com ela e escolha o squad no seletor.'} Tempos e rituais vêm da <b>Capacidade instalada</b>.</span>
+      <label>Desqualificações por qualificação <input type="number" min="0" step="any" class="w-s" data-mkr="1" aria-label="Desqualificações por qualificação"></label>
+    </div>`;
+
+  const det = document.getElementById('m-detail');
+  if (one >= 0) {
+    det.hidden = false;
+    det.innerHTML = `
+      <div class="qrow"><p class="qrow-t">Premissas da marca</p><div class="qcells">
+        ${mIn(one, 'qlp', 'QLP definido', 'vend.', { key: true })}
+        ${mIn(one, 'dias', 'Dias úteis', 'dias')}
+        ${mIn(one, 'metaWeb', '% meta convidado webinar', '%')}
+        ${mIn(one, 'cadencia', 'Cadência de ligação por lead', 'ligações')}
+        ${mIn(one, 'mediaAtual', 'Média atual de ligação por vendedor', 'por dia', { base: true })}
+      </div>
+      <div class="mcopy"><button type="button" data-mcopy="${one}">Aplicar estas premissas a todas as marcas</button><span data-o="mcopy-msg">Copia dias úteis, % de abertura, cadência, média de ligação e conversões. O QLP definido de cada marca não muda.</span></div></div>
+      <div class="qrow"><p class="qrow-t">Volume e meta da marca</p><div class="qcells">
+        ${mCalc('lig', 'Total de ligações')}
+        ${mIn(one, 'leads', 'Leads em contato (meta de leads)', 'leads', { key: true })}
+        ${mCalc('qual', 'Meta de abertura')}
+        ${mCalc('mlig', 'Meta de ligação por vendedor', true)}
+      </div></div>
+      <div class="qrow"><p class="qrow-t">Dimensionamento</p><div class="qcells">
+        ${mCalc('ligd', 'Ligações por dia da marca')}
+        ${mCalc('need', 'Vendedores necessários')}
+        ${mCalc('sug', 'QLP sugerido')}
+      </div></div>
+      <div class="qrow"><p class="qrow-t">Receita</p><div class="qcells">
+        ${mIn(one, 'meta', 'Meta financeira', 'R$', { key: true })}
+        ${mIn(one, 'convGeral', 'Conversão geral', '%', { ref: true })}
+        ${mIn(one, 'convAbertura', 'Conversão sobre abertura', '%')}
+        ${mCalc('tm', 'Ticket médio')}
+      </div></div>
+      <div class="qrow"><p class="qrow-t">Produtividade de cada vendedor</p>
+        <div class="mdgrid">
+          <article class="kpi kpi-ideal">
+            <p class="scen-name" data-o="md-who"></p>
+            <p class="scen-pct" data-o="md-pct"></p>
+            <div class="prog"><div class="prog-fill" data-o="md-fill"></div><div class="prog-meta" data-o="md-meta"><span></span></div></div>
+            <div class="scale"><span>0 min</span><span data-o="md-scale"></span></div>
+            <p class="scen-status" data-o="md-status"></p>
+            <dl class="kstats" data-o="md-stats"></dl>
+          </article>
+          <div class="tscroll"><table class="ct mb" id="md-break"></table></div>
+        </div>
+      </div>`;
+  } else { det.hidden = true; det.innerHTML = ''; }
+
+  document.getElementById('m-table').innerHTML = `
+    <thead><tr><th scope="col">Marca</th><th scope="col">Meta de leads</th><th scope="col">Meta de abertura</th><th scope="col">Meta (R$)</th><th scope="col">Ticket médio</th><th scope="col">Ligações</th><th scope="col">Vendedores necessários</th><th scope="col">QLP sugerido</th><th scope="col">QLP definido</th><th scope="col">Meta de ligação/dia</th><th scope="col" class="st">Situação</th></tr></thead>
+    <tbody>${idxs.map(i => `<tr data-o="mr-${i}">
+      <td class="nm">${esc(state.mk.list[i].n)}<span class="pr prem" data-o="mt-${i}-prem"></span></td>
+      <td>${mInT(i, 'leads')}</td>
+      <td class="calc" data-o="mt-${i}-qual"></td>
+      <td>${mInT(i, 'meta', 'w-m')}</td>
+      <td class="calc" data-o="mt-${i}-tm"></td>
+      <td class="calc" data-o="mt-${i}-lig"></td>
+      <td class="calc" data-o="mt-${i}-need"></td>
+      <td class="calc" data-o="mt-${i}-sug"></td>
+      <td>${mInT(i, 'qlp', 'w-s')}</td>
+      <td class="calc" data-o="mt-${i}-mlig"></td>
+      <td class="st" data-o="mt-${i}-st"></td></tr>`).join('')}</tbody>
+    ${one < 0 ? `<tfoot><tr><td class="nm">${V.t === 'sq' ? 'Total do squad' : 'Total'}</td><td data-o="mtt-leads"></td><td data-o="mtt-qual"></td><td data-o="mtt-meta"></td><td data-o="mtt-tm"></td><td data-o="mtt-lig"></td><td data-o="mtt-need"></td><td data-o="mtt-sug"></td><td data-o="mtt-def"></td><td data-o="mtt-mlig"></td><td></td></tr></tfoot>` : ''}`;
+
+  document.querySelectorAll('input[data-mk]').forEach(el => {
+    el.addEventListener('input', () => {
+      const [i, k] = el.dataset.mk.split('-');
+      state.mk.list[i][k] = getVal(el);
+      save(); renderM();
+    });
+  });
+  const rEl = document.querySelector('input[data-mkr]');
+  rEl.addEventListener('input', () => { state.mk.ratio = rEl.value === '' ? 0 : parseFloat(rEl.value); save(); renderM(); });
+  const absEl = document.getElementById('m-absin');
+  absEl.innerHTML = `<span><b>Absenteísmo (faltas)</b> usado na folga da tripulação:</span>${state.abs.meses.map((m, i) => `<label>${esc(m.n)} <input type="number" min="0" max="99" step="any" data-abs="${i}" aria-label="Absenteísmo de ${esc(m.n)} em porcentagem"> %</label>`).join('')}<span>Média <b data-o="abs-media"></b></span>`;
+  absEl.querySelectorAll('input[data-abs]').forEach(el => {
+    el.addEventListener('input', () => { state.abs.meses[+el.dataset.abs].v = el.value === '' ? 0 : parseFloat(el.value); save(); renderM(); });
+  });
+  mBuilt = true;
+}
+
+function crewCalc(R){
+  const SQ = squadData(R);
+  const inSq = new Set(state.squads.flatMap(x => x.marcas));
+  const nFree = R.rows.filter(r => !inSq.has(r.n)).length;
+  const base = SQ.reduce((a, x) => a + x.S.qlp, 0), need = SQ.reduce((a, x) => a + x.S.need, 0);
+  const A = absCalc(base);
+  return { SQ, nFree, base, need, A, sug: base + A.extra };
+}
+function absCalc(base){
+  const ms = (state.abs && state.abs.meses) || [];
+  const vals = ms.map(m => num(m.v));
+  const media = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+  const a = Math.min(media, 95) / 100;
+  const bruto = base > 0 ? base / (1 - a) : 0;
+  const extra = base > 0 ? Math.max(0, Math.ceil(bruto - 1e-9) - base) : 0;
+  return { media, bruto, extra, n: vals.length };
+}
+function squadData(R){
+  return state.squads.filter(q => q.marcas.length).map(sq => { const S = calcSquad(sq, R); return { sq, S, Q: calcSqQ(sq, S) }; }).filter(x => x.S.rows.length);
+}
+/* produtividade de cada squad: um vendedor do squad, pela calculadora do squad */
+function sqChart(SQ, meta, metaTxt){
+  const items = SQ.filter(x => x.Q.p);
+  if (!items.length) return '<h4>Produtividade por squad</h4><p class="empty">Monte squads para ver a produtividade de cada um aqui.</p>';
+  const nT = items.reduce((a, x) => a + x.Q.N, 0);
+  const avg = items.reduce((a, x) => a + x.Q.p.pct * x.Q.N, 0) / nT;
+  const pos = v => Math.min(100, Math.max(0, v * 100));
+  const sorted = items.slice().sort((a, b) => b.Q.p.pct - a.Q.p.pct);
+  return `<h4>Produtividade por squad</h4>
+    <ul class="cb-keys"><li><i class="up"></i>Acima da média</li><li><i class="down"></i>Abaixo da média</li><li><i class="ln"></i>Média dos squads ${pf(avg)}%</li><li><i class="ln dash"></i>Meta ${metaTxt}</li></ul>
+    <div class="cb-row" aria-hidden="true"><span></span><div class="cb-track axis"><span class="cb-tag" style="left:${pos(avg)}%">Média</span><span class="cb-tag" style="left:${pos(meta)}%">Meta</span></div><span></span></div>
+    ${sorted.map(x => { const lb = sqTxt(x.sq), pct = x.Q.p.pct; return `<div class="cb-row" title="${esc(lb)}: ${nf(x.Q.N, 0)} ${x.Q.N === 1 ? 'vendedor' : 'vendedores'}"><span class="cb-l">${esc(x.sq.nome)} <span class="sq-br">${esc(sqBrands(x.sq))}</span></span><div class="cb-track" role="img" aria-label="${esc(lb)}: ${pf(pct)}%"><div class="cb-fill ${pct >= avg - 1e-9 ? 'up' : 'down'}" style="width:${pos(pct)}%"></div><span class="cb-avg" style="left:${pos(avg)}%"></span><span class="cb-meta" style="left:${pos(meta)}%"></span></div><span class="cb-v">${pf(pct)}% <small>(${nf(x.Q.N, 0)} ${x.Q.N === 1 ? 'vendedor' : 'vendedores'})</small></span></div>`; }).join('')}`;
+}
+function prList(R, idxs){
+  const pr = [];
+  idxs.forEach(i => { const r = R.rows[i]; if (r.def > 0 && r.p) pr.push({ who: r.n, sub: '', n: r.def, lig: r.ligDia, qual: r.qualDia, p: r.p }); });
+  const seen = new Set();
+  idxs.forEach(i => { const s = R.rows[i].seller; if (s && s.p && !seen.has(s)) { seen.add(s); pr.push({ who: `Multimarca ${s.id}`, sub: s.brands.map(b => b.n).join(', '), n: 1, lig: s.ligDia, qual: s.qualDia, p: s.p }); } });
+  return pr;
+}
+function pctCell(p){
+  if (!p) return '–';
+  const meta = num(state.g.meta) / 100;
+  const cls = p.total > p.dia ? 'over' : p.pct + 1e-9 >= meta ? 'hit' : '';
+  return `<span class="pct ${cls}">${pf(p.pct)}%</span>`;
+}
+
+function renderM(){
+  if (!mBuilt) return;
+  const R = calcM(), g = state.g, meta = num(g.meta) / 100;
+  const V = mView();
+  const one = V.t === 'one' ? V.i : -1;
+  const idxs = V.idxs;
+  const isSq = V.t === 'sq';
+
+  document.querySelectorAll('input[data-mk]').forEach(el => {
+    if (el === document.activeElement) return;
+    const [i, k] = el.dataset.mk.split('-');
+    setVal(el, state.mk.list[i][k]);
+  });
+  const rEl = document.querySelector('input[data-mkr]');
+  if (rEl !== document.activeElement) rEl.value = state.mk.ratio;
+  $o('mp-ratio2').textContent = nf(num(state.mk.ratio), 1);
+
+  // tabela de QLP
+  idxs.forEach(i => {
+    const r = R.rows[i];
+    $o(`mt-${i}-prem`).textContent = `${nf(r.dias, 0)} dias · ${nf(r.pq * 100, 2)}% abertura · cadência ${nf(r.cad, 1)} · média ${nf(r.cap, 0)}/dia`;
+    $o(`mt-${i}-qual`).textContent = nf(r.qual, 1);
+    $o(`mt-${i}-tm`).textContent = r.tm ? brl(r.tm, 0) : '–';
+    $o(`mt-${i}-lig`).textContent = nf(r.lig, 0);
+    $o(`mt-${i}-need`).textContent = f2(r.need);
+    $o(`mt-${i}-sug`).textContent = nf(r.sug, 0);
+    $o(`mt-${i}-mlig`).textContent = r.mlig == null ? '–' : nf(r.mlig, 0);
+    const tags = [];
+    if (r.multi) tags.push(`<span class="tag2 multi">Multimarca ${r.seller ? r.seller.id : ''}</span>`);
+    else if (r.sugMulti) tags.push('<span class="tag2 multi">Sugerido multimarca</span>');
+    if (r.def !== r.sug) { const d = r.def - r.sug; tags.push(`<span class="tag2 warn">${d > 0 ? '+' : '−'}${nf(Math.abs(d), 1)} vs sugerido</span>`); }
+    if (r.absorb) tags.push(`<span class="tag2 abs">Pode absorver (folga ${f2(r.folga)})</span>`);
+    if (!tags.length) tags.push('<span class="tag2 ok">Conforme</span>');
+    $o(`mt-${i}-st`).innerHTML = tags.join('');
+    $o(`mr-${i}`).classList.toggle('diff', r.def !== r.sug);
+  });
+  if (one < 0) {
+    const t = totOf(idxs.map(i => R.rows[i]));
+    $o('mtt-leads').textContent = nf(t.leads, 0);
+    $o('mtt-qual').textContent = nf(t.qual, 1);
+    $o('mtt-meta').textContent = brl(t.meta, 0);
+    $o('mtt-tm').textContent = brl(t.tm, 0);
+    $o('mtt-lig').textContent = nf(t.lig, 0);
+    $o('mtt-need').textContent = f2(t.need);
+    $o('mtt-sug').textContent = nf(t.sug, 0);
+    $o('mtt-def').textContent = nf(t.def, 0);
+    $o('mtt-mlig').textContent = t.mlig == null ? '–' : nf(t.mlig, 0);
+  }
+
+  // resumo geral (todas as marcas)
+  const sumEl = document.getElementById('m-summary');
+  if (V.t === 'all') {
+    // tripulação: soma do QLP sugerido de cada squad (marcas sem squad não entram)
+    // folga para absenteísmo: vendedores a mais para que, descontada a média de faltas, a base continue completa
+    const { SQ, nFree, base, need, A, sug } = crewCalc(R);
+    const dif = base - need;
+    const partes = SQ.length
+      ? `${nf(base, 0)} QLP dos squads + ${nf(A.extra, 0)} de projeção de absenteísmo${nFree ? `. ${nf(nFree, 0)} ${nFree === 1 ? 'marca ainda sem squad não entra' : 'marcas ainda sem squad não entram'}` : ''}`
+      : 'Monte squads para calcular a tripulação';
+    sumEl.hidden = false;
+    sumEl.innerHTML = `<p class="qrow-t">Resumo da tripulação</p><div class="qcells">
+      <div class="qc calc out-key"><span class="qc-l">Tripulação sugerida</span><span class="qc-n">${nf(sug, 0)}</span><span class="qc-f">${partes}</span></div>
+      <div class="qc calc"><span class="qc-l">Vendedores necessários</span><span class="qc-n">${f2(need)}</span><span class="qc-f">Marcas dos squads, conta exata sem arredondar</span></div>
+      <div class="qc calc"><span class="qc-l">Diferença</span><span class="qc-n">${dif > 0.005 ? '+' : dif < -0.005 ? '−' : ''}${f2(Math.abs(dif))}</span><span class="qc-f">${Math.abs(dif) <= 0.005 ? 'QLP dos squads igual ao necessário' : dif > 0 ? 'Folga do QLP dos squads sobre o necessário, sem contar o absenteísmo' : 'QLP dos squads abaixo do necessário'}</span></div>
+      <div class="qc calc"><span class="qc-l">Folga para absenteísmo</span><span class="qc-n">+${nf(A.extra, 0)}</span><span class="qc-f">${A.media > 0 && base > 0 ? `Média de ${nf(A.media, 2)}% de faltas nos últimos ${nf(A.n, 0)} meses. ${nf(base, 0)} ÷ (1 − ${nf(A.media, 2)}%) = ${f2(A.bruto)}, arredondado para ${nf(base + A.extra, 0)}` : 'Informe o absenteísmo dos últimos meses abaixo'}</span></div>
+    </div>`;
+  } else { sumEl.hidden = true; sumEl.innerHTML = ''; }
+  const absEl = document.getElementById('m-absin');
+  absEl.hidden = V.t !== 'all';
+  absEl.querySelectorAll('input[data-abs]').forEach(el => { if (el !== document.activeElement) el.value = state.abs.meses[+el.dataset.abs].v; });
+  const absM = absEl.querySelector('[data-o="abs-media"]'); if (absM) absM.textContent = nf(absCalc(0).media, 2) + '%';
+
+  // multimarca
+  const mm = document.getElementById('m-multi');
+  const inView = new Set(idxs);
+  const sellers = V.t === 'all' ? R.sellers : R.sellers.filter(s => s.brands.some(b => inView.has(b.i)));
+  if (V.t !== 'all' && !sellers.length) mm.hidden = true;
+  else {
+    mm.hidden = false;
+    document.getElementById('m-sellers').innerHTML = sellers.length ? sellers.map(s => `
+      <article class="mseller">
+        <h4>Vendedor multimarca ${s.id}</h4>
+        <p class="ml">Carga de ${f2(s.load)} vendedor (${nf(s.load * 100, 0)}% da capacidade)</p>
+        <div class="load"><i style="width:${Math.min(100, s.load * 100)}%"></i></div>
+        <ul>${s.brands.map(b => `<li><span>${esc(b.n)}</span><b>${f2(b.need)}</b></li>`).join('')}</ul>
+        ${s.load < 1 - 1e-9 ? `<p class="mfree">Sobra ${f2(1 - s.load)} de capacidade para outra marca.</p>` : ''}
+      </article>`).join('') : '<p class="empty">Nenhuma marca está com QLP definido 0, então não há vendedor multimarca.</p>';
+    const abs = R.rows.filter(r => r.absorb);
+    document.getElementById('m-abs').innerHTML = V.t === 'all' && abs.length
+      ? `Marcas dedicadas com folga para absorver uma marca multimarca: ${abs.map(r => `<span class="tag2 abs">${esc(r.n)}, folga de ${f2(r.folga)}</span>`).join('')}`
+      : '';
+  }
+
+  // produtividade
+  const pr = prList(R, idxs);
+  const ratio = num(state.mk.ratio);
+  let foot = '';
+  if (one < 0 && pr.length) {
+    const nT = pr.reduce((a, x) => a + x.n, 0);
+    const avg = pr.reduce((a, x) => a + x.p.pct * x.n, 0) / nT;
+    foot = `<tfoot><tr><td class="nm">${isSq ? 'Média do squad' : 'Média do time'}</td><td>${nf(nT, 0)}</td><td colspan="8"></td><td><span class="pct ${avg + 1e-9 >= meta ? 'hit' : ''}">${pf(avg)}%</span></td></tr></tfoot>`;
+  }
+  document.getElementById('m-prod').innerHTML = `
+    <thead><tr><th scope="col">Vendedor</th><th scope="col">Vendedores</th><th scope="col">Ligações por dia</th><th scope="col">Qualificações por dia</th><th scope="col">Desqualificações por dia</th><th scope="col">Leads em nutrição</th><th scope="col" class="tg">Contato com leads (min)</th><th scope="col" class="tg">Webinar e pitch (min)</th><th scope="col" class="tg">Rituais (min)</th><th scope="col">Minutos produtivos</th><th scope="col">% produtivo</th></tr></thead>
+    <tbody>${pr.length ? pr.map(x => `<tr>
+      <td class="nm">${esc(x.who)}${x.sub ? `<span class="pr" style="text-align:left;white-space:normal">${esc(x.sub)}</span>` : ''}</td>
+      <td>${nf(x.n, 0)}</td>
+      <td class="calc">${nf(x.lig, 0)}</td>
+      <td class="calc">${nf(x.qual, 2)}</td>
+      <td class="calc">${nf(x.qual * ratio, 2)}</td>
+      <td class="calc">${nf(x.p.leads, 1)}</td>
+      <td class="calc tg">${nf(x.p.m.lig + x.p.m.qual + x.p.m.desq + x.p.m.nut, 0)}</td>
+      <td class="calc tg">${nf(x.p.m.web, 0)}</td>
+      <td class="calc tg">${nf(x.p.rit, 0)}</td>
+      <td class="calc">${nf(x.p.total, 0)} <span class="pr">${hm(x.p.total)}</span></td>
+      <td>${pctCell(x.p)}</td></tr>`).join('') : '<tr><td colspan="11" class="nm">Sem vendedor definido para calcular a produtividade.</td></tr>'}</tbody>${foot}`;
+
+  // visão do time ou do squad
+  const ov = document.getElementById('m-over');
+  if (V.t === 'all') {
+    // média do time = média dos squads, ponderada pelos vendedores de cada squad
+    const sqItems = squadData(R).filter(x => x.Q.p);
+    const nT = sqItems.reduce((a, x) => a + x.Q.N, 0);
+    const avg = nT > 0 ? sqItems.reduce((a, x) => a + x.Q.p.pct * x.Q.N, 0) / nT : 0;
+    const up = sqItems.filter(x => x.Q.p.pct >= avg - 1e-9).length, down = sqItems.length - up;
+    const hit = sqItems.filter(x => x.Q.p.pct + 1e-9 >= meta).length;
+    const C = crewCalc(R);
+    const pos = v => Math.min(100, Math.max(0, v * 100));
+    const metaTxt = nf(num(g.meta), 1) + '%';
+    const quem = isSq ? 'do squad' : 'do time';
+    const fim = avg + 1e-9 >= meta ? `A média ${quem} já está na meta.` : `Faltam ${nf((meta - avg) * 100, 1)} pontos para a média ${quem} chegar lá.`;
+    ov.hidden = false;
+    ov.innerHTML = `<div class="qrow"><p class="qrow-t">Produtividade ${isSq ? 'do squad ' + esc(sqTxt(V.sq)) : 'do time'}</p><div class="mdgrid">
+      <article class="kpi kpi-ideal">
+        <p class="scen-name">Média do time, tripulação sugerida de ${nf(C.sug, 0)} vendedores</p>
+        <p class="scen-sub">${sqItems.length ? `Calculada sobre os ${nf(nT, 0)} vendedores em atividade nos squads${C.A.extra ? `; os ${nf(C.A.extra, 0)} da folga para absenteísmo cobrem as faltas` : ''}.` : 'Monte squads para calcular a produtividade do time.'}</p>
+        <p class="scen-pct">${pf(avg)}<small>%</small></p>
+        <div class="prog"><div class="prog-fill" style="width:${pos(avg)}%"></div><div class="prog-meta" style="left:${pos(meta)}%"><span>Meta ${metaTxt}</span></div></div>
+        <div class="scale"><span>0%</span><span>100% da jornada</span></div>
+        <p class="scen-status">${sqItems.length ? `${up} ${up === 1 ? 'squad está' : 'squads estão'} acima da média e ${down} abaixo. <strong>${hit ? `${hit} ${hit === 1 ? 'atinge' : 'atingem'} a meta de ${metaTxt}.` : `Nenhum squad atinge a meta de ${metaTxt}.`}</strong> ${fim}` : ''}</p>
+        <dl class="kstats">
+          <div><dt>Acima da média</dt><dd>${up}</dd></div>
+          <div><dt>Abaixo da média</dt><dd>${down}</dd></div>
+        </dl>
+      </article>
+      <div class="mchart sqchart">${sqChart(squadData(R), meta, metaTxt)}
+      </div></div></div>`;
+  } else { ov.hidden = true; ov.innerHTML = ''; }
+
+  renderSquads(R, V);
+  document.getElementById('m-indiv').hidden = true;
+
+  // calculadora da marca
+  if (one >= 0) {
+    const r = R.rows[one];
+    $o('md-lig').textContent = nf(r.lig, 0);
+    $o('mdf-lig').textContent = `${nf(r.leads, 0)} leads × ${nf(r.cad, 1)} ligações`;
+    $o('md-qual').textContent = nf(r.qual, 1);
+    $o('mdf-qual').textContent = `${nf(r.leads, 0)} leads × ${nf(r.pq * 100, 2)}%`;
+    $o('md-mlig').textContent = r.mlig == null ? '–' : nf(r.mlig, 0);
+    if (r.mlig == null) $o('mdf-mlig').textContent = r.seller ? `Atendida pelo vendedor multimarca ${r.seller.id}` : 'Sem vendedor definido';
+    else {
+      const dif = r.cap - r.mlig;
+      const cmp = Math.abs(dif) < 0.5 ? 'igual à meta' : dif > 0 ? `${nf(dif, 0)} acima da meta` : `${nf(-dif, 0)} abaixo da meta`;
+      $o('mdf-mlig').textContent = `${nf(r.lig, 0)} ÷ ${nf(r.def, 0)} ${r.def === 1 ? 'vendedor' : 'vendedores'} ÷ ${nf(r.dias, 0)} dias. Média atual de ${nf(r.cap, 0)}, ${cmp}.`;
+    }
+    $o('md-ligd').textContent = nf(r.ligD, 0);
+    $o('mdf-ligd').textContent = `${nf(r.lig, 0)} ligações ÷ ${nf(r.dias, 0)} dias`;
+    $o('md-need').textContent = f2(r.need);
+    $o('mdf-need').textContent = `${nf(r.ligD, 0)} ligações por dia ÷ ${nf(r.cap, 0)} por vendedor (média atual)`;
+    $o('md-sug').textContent = nf(r.sug, 0);
+    $o('mdf-sug').textContent = r.sugMulti ? 'Até 0,5 vendedor: nenhum dedicado, entra em vendedor multimarca' : 'Vendedores necessários arredondado para cima';
+    $o('md-tm').textContent = r.tm ? brl(r.tm, 0) : '–';
+    $o('mdf-tm').textContent = `${brl(r.meta, 0)} ÷ (${nf(r.qual, 1)} × ${nf(r.conv * 100, 2)}%)`;
+
+    const shared = r.def > 0 ? null : r.seller;
+    const P = r.def > 0 ? r.p : shared && shared.p;
+    const ligDia = r.def > 0 ? r.ligDia : shared && shared.ligDia;
+    const qualDia = r.def > 0 ? r.qualDia : shared && shared.qualDia;
+    $o('md-who').textContent = r.def > 0
+      ? (r.def === 1 ? 'O vendedor da marca' : `Cada um dos ${nf(r.def, 0)} vendedores da marca`)
+      : shared ? `Vendedor multimarca ${shared.id}: ${shared.brands.map(b => b.n).join(', ')}` : 'Sem vendedor';
+    const brk = document.getElementById('md-break');
+    if (P) {
+      const st = state.ideal;
+      $o('md-pct').innerHTML = `${pf(P.pct)}<small>%</small>`;
+      $o('md-fill').style.width = Math.min(100, P.pct * 100) + '%';
+      const mk = $o('md-meta'); mk.style.left = Math.min(100, meta * 100) + '%'; mk.querySelector('span').textContent = `Meta ${nf(num(g.meta), 1)}%`;
+      $o('md-scale').textContent = `${nf(P.dia, 0)} min`;
+      const gap = meta * P.dia - P.total;
+      $o('md-status').innerHTML = `${nf(P.total, 0)} min produtivos, ${hm(P.total)}. ` + (P.total > P.dia
+        ? `<strong>Passa da jornada em ${nf(P.total - P.dia, 0)} min.</strong>`
+        : gap > 0.05 ? `Faltam <strong>${nf(gap, 0)} min</strong> para a meta.` : `<strong>Meta atingida</strong>, ${nf(-gap, 0)} min acima.`);
+      const rowsB = [
+        ['Ligações', `${nf(ligDia, 0)} × ${nf(num(st.minLig), 1)} min`, P.m.lig],
+        ['Qualificação', `${nf(qualDia, 2)} × ${nf(num(st.minQual), 1)} min`, P.m.qual],
+        ['Desqualificação', `${nf(qualDia * ratio, 2)} × ${nf(num(st.minDesq), 1)} min`, P.m.desq],
+        ['Nutrição', `${nf(P.leads, 1)} leads × ${nf(P.tLead, 2)} min`, P.m.nut],
+        ['Webinar e pitch', `${nf(num(st.web), 0)} + ${nf(num(st.pitch), 0)} min`, P.m.web],
+        ['1:1 e alinhamentos', 'por dia', P.m.umum],
+        ['Grito', 'por dia', P.m.grito],
+        ['Treinamentos', `${nf(num(st.trein), 0)} min por semana`, P.m.trein],
+        ['ADP e prestação de contas', 'por dia', P.m.adp]
+      ];
+      brk.innerHTML = `<thead><tr><th scope="col">Atividade</th><th scope="col">Premissa</th><th scope="col">Minutos por dia</th></tr></thead>
+        <tbody>${rowsB.map(([a, p, v]) => `<tr><td class="nm">${a}</td><td class="pr2">${p}</td><td class="calc">${nf(v, 1)}</td></tr>`).join('')}
+        <tr class="tot"><td class="nm">Total produtivo</td><td class="pr2">${hm(P.total)}</td><td class="calc">${nf(P.total, 1)}</td></tr>
+        <tr class="pctr"><td class="nm">% produtivo</td><td class="pr2">${nf(P.total, 0)} de ${nf(P.dia, 0)} min.<br>Meta de ${nf(num(g.meta), 1)}%</td><td class="calc">${pf(P.pct)}%</td></tr></tbody>`;
+      const gapMin = meta * P.dia - P.total;
+      $o('md-stats').innerHTML = [
+        ['Ligações por dia', nf(ligDia, 0)],
+        ['Leads em nutrição', nf(P.leads, 1)],
+        ['Contato com leads', nf(P.m.lig + P.m.qual + P.m.desq + P.m.nut, 0) + ' min'],
+        ['Webinar, pitch e rituais', nf(P.m.web + P.rit, 0) + ' min'],
+        ['Tempo livre', nf(Math.max(0, P.dia - P.total), 0) + ' min'],
+        [gapMin > 0.05 ? 'Falta para a meta' : 'Acima da meta', nf(Math.abs(gapMin), 0) + ' min']
+      ].map(([t, v]) => `<div><dt>${t}</dt><dd>${v}</dd></div>`).join('');
+    } else {
+      $o('md-pct').textContent = '–';
+      $o('md-fill').style.width = '0%';
+      $o('md-status').textContent = 'Defina ao menos 1 vendedor, ou deixe o QLP em 0 com necessidade maior que zero para entrar em um vendedor multimarca.';
+      brk.innerHTML = '';
+      $o('md-stats').innerHTML = '';
+    }
+  }
+}
+
+/* ---------- Squads ---------- */
+let sqMsg = '';
+function refreshM(){ buildM(); renderM(); }
+function moveBrand(n, to){
+  if (to !== 'pool') {
+    const sq = state.squads.find(x => x.id === to);
+    if (!sq || sq.marcas.includes(n)) return;
+    if (sq.marcas.length >= 5) { sqMsg = `${sqTxt(sq)} já tem 5 marcas, o máximo por squad.`; renderM(); return; }
+  }
+  state.squads.forEach(x => { x.marcas = x.marcas.filter(m => m !== n); });
+  if (to !== 'pool') state.squads.find(x => x.id === to).marcas.push(n);
+  sqMsg = ''; save(); refreshM();
+}
+const sqOpen = new Set(); // abertos só nesta visita: ao abrir a página, tudo começa fechado
+function calcSquad(sq, R){
+  const rows = sq.marcas.map(n => R.rows.find(r => r.n === n)).filter(Boolean);
+  const sum = f => rows.reduce((a, r) => a + r[f], 0);
+  const need = sum('need'), lig = sum('lig'), qual = sum('qual'), ligD = sum('ligD'), qualD = sum('qualD');
+  const qlp = need > 1e-9 ? Math.ceil(need - 1e-9) : 0;
+  const separado = rows.reduce((a, r) => a + (r.need > 1e-9 ? Math.ceil(r.need - 1e-9) : 0), 0);
+  // distribuição: inteiros viram dedicados, os restos são encaixados no menor número de vendedores
+  const sellers = [];
+  rows.forEach(r => { for (let k = 0; k < Math.floor(r.need + 1e-9); k++) sellers.push({ brands: [{ n: r.n, load: 1 }], load: 1 }); });
+  const rem = rows.map(r => ({ n: r.n, load: r.need - Math.floor(r.need + 1e-9) })).filter(x => x.load > 1e-6).sort((a, b) => b.load - a.load);
+  const slots = Math.max(0, qlp - sellers.length);
+  let bins = [];
+  rem.forEach(x => { let b = bins.find(b => b.load + x.load <= 1 + 1e-9); if (!b) { b = { brands: [], load: 0 }; bins.push(b); } b.brands.push({ ...x }); b.load += x.load; });
+  if (bins.length > slots) {
+    bins = []; let cur = null;
+    rem.forEach(x => { let left = x.load; while (left > 1e-9) { if (!cur || cur.load >= 1 - 1e-9) { cur = { brands: [], load: 0 }; bins.push(cur); } const take = Math.min(left, 1 - cur.load); cur.brands.push({ n: x.n, load: take }); cur.load += take; left -= take; } });
+  }
+  sellers.push(...bins);
+  const dist = {};
+  rows.forEach(r => { dist[r.n] = { ded: 0, shared: 0 }; });
+  sellers.forEach(sv => {
+    const names = [...new Set(sv.brands.map(b => b.n))];
+    if (names.length === 1) dist[names[0]].ded += 1; else names.forEach(n => { dist[n].shared += 1; });
+  });
+  const p = qlp > 0 ? prodFor(ligD / qlp, qualD / qlp) : null;
+  return { rows, need, qlp, separado, sellers, dist, lig, qual, ligD, qualD, leads: sum('leads'), meta: sum('meta'), def: sum('def'), p,
+    ligDia: qlp > 0 ? ligD / qlp : 0 };
+}
+/* Calculadora de QLP do squad: projetada a partir das marcas, ajustes ficam só no squad */
+const SQC = {
+  qlp: ['QLP proposto', 'vend.'], dias: ['Dias úteis', 'dias'], metaWeb: ['% meta convidado webinar', '%'],
+  cadencia: ['Cadência de ligação por lead', 'ligações'], mediaAtual: ['Média atual de ligação por vendedor', 'por dia'],
+  leads: ['Leads em contato', 'leads'], meta: ['Meta financeira', 'R$'], convAbertura: ['Conversão sobre abertura', '%']
+};
+function sqAuto(S){
+  const rows = S.rows, leads = S.leads;
+  const avg = f => rows.length ? rows.reduce((a, r) => a + r[f], 0) / rows.length : 0;
+  return {
+    qlp: S.qlp,
+    dias: S.ligD > 0 ? S.lig / S.ligD : avg('dias'),
+    metaWeb: leads > 0 ? S.qual / leads * 100 : avg('pq') * 100,
+    cadencia: leads > 0 ? S.lig / leads : avg('cad'),
+    mediaAtual: S.need > 0 ? S.ligD / S.need : avg('cap'),
+    leads, meta: S.meta,
+    convAbertura: S.qual > 0 ? rows.reduce((a, r) => a + r.qual * r.conv, 0) / S.qual * 100 : avg('conv') * 100
+  };
+}
+function calcSqQ(sq, S){
+  const a = sqAuto(S), o = sq.calc || {}, v = {};
+  Object.keys(SQC).forEach(k => { v[k] = o[k] !== undefined ? num(o[k]) : a[k]; });
+  const qual = v.leads * v.metaWeb / 100, lig = v.leads * v.cadencia;
+  const d = v.dias > 0 ? v.dias : 0;
+  const ligD = d ? lig / d : 0, qualD = d ? qual / d : 0, leadsD = d ? v.leads / d : 0;
+  const need = v.mediaAtual > 0 ? ligD / v.mediaAtual : 0;
+  const N = v.qlp;
+  return { v, a, o, qual, lig, ligD, qualD, leadsD, need, sug: need > 1e-9 ? Math.ceil(need - 1e-9) : 0, N,
+    mlig: N > 0 && d ? ligD / N : null,
+    tm: qual * v.convAbertura / 100 > 0 ? v.meta / (qual * v.convAbertura / 100) : 0,
+    p: N > 0 && d ? prodFor(ligD / N, qualD / N) : null };
+}
+function sqIn(sq, k, o = {}){
+  const [label, unit] = SQC[k], pre = unit === 'R$';
+  return `<label class="qc${o.key ? ' in-key' : ''}${o.base ? ' is-base' : ''}"><span class="qc-l">${label}${o.base ? '<span class="ref base-tag" title="Valor base do squad, usado para os vendedores necessários">valor base</span>' : ''}<span class="ref adj" data-x="adj-${k}" title="Valor alterado só neste squad" hidden>ajustado</span></span><span class="qc-v">${pre ? '<span class="cur">R$</span>' : ''}<input ${pre ? 'type="text" inputmode="decimal" data-money' : 'type="number" min="0" step="any"'} data-sqc="${esc(sq.id)}|${k}" aria-label="${label}, ${esc(sq.nome)}">${pre ? '' : unit}</span></label>`;
+}
+const sqOut = (k, label, dark) => `<div class="qc calc${dark ? ' out-key' : ''}"><span class="qc-l">${label}</span><span class="qc-n" data-x="n-${k}"></span><span class="qc-f" data-x="f-${k}"></span></div>`;
+const r2 = v => Math.round(num(v) * 100) / 100;
+function fillSquad(art, sq, S, Q){
+  const x = k => art.querySelector(`[data-x="${k}"]`);
+  art.querySelectorAll('input[data-sqc]').forEach(el => {
+    const k = el.dataset.sqc.split('|')[1];
+    if (el !== document.activeElement) setVal(el, r2(Q.v[k]));
+    x('adj-' + k).hidden = Q.o[k] === undefined;
+  });
+  x('sqreset').hidden = !Object.keys(Q.o).length;
+  const v = Q.v;
+  x('n-lig').textContent = nf(Q.lig, 0);
+  x('f-lig').textContent = `${nf(v.leads, 0)} leads × ${nf(v.cadencia, 2)} ligações`;
+  x('n-qual').textContent = nf(Q.qual, 1);
+  x('f-qual').textContent = `${nf(v.leads, 0)} leads × ${nf(v.metaWeb, 2)}%`;
+  x('n-need').textContent = f2(Q.need);
+  x('f-need').textContent = `${nf(Q.ligD, 0)} ligações por dia ÷ ${nf(v.mediaAtual, 0)} por vendedor. Sugere ${nf(Q.sug, 0)} ${Q.sug === 1 ? 'vendedor' : 'vendedores'}`;
+  x('n-mlig').textContent = Q.mlig == null ? '–' : nf(Q.mlig, 0);
+  if (Q.mlig == null) x('f-mlig').textContent = 'Defina o QLP proposto e os dias úteis';
+  else {
+    const dif = v.mediaAtual - Q.mlig;
+    const cmp = Math.abs(dif) < 0.5 ? 'igual à meta' : dif > 0 ? `${nf(dif, 0)} acima da meta` : `${nf(-dif, 0)} abaixo da meta`;
+    x('f-mlig').textContent = `${nf(Q.lig, 0)} ÷ ${nf(Q.N, 0)} ${Q.N === 1 ? 'vendedor' : 'vendedores'} ÷ ${nf(v.dias, 1)} dias. Média atual de ${nf(v.mediaAtual, 0)}, ${cmp}.`;
+  }
+  x('n-tm').textContent = Q.tm ? brl(Q.tm, 0) : '–';
+  x('f-tm').textContent = `${brl(v.meta, 0)} ÷ (${nf(Q.qual, 1)} × ${nf(v.convAbertura, 2)}%)`;
+  // cada vendedor e linha por vendedor seguem a calculadora do squad
+  x('n-cada').textContent = Q.p ? pf(Q.p.pct) + '%' : '–';
+  x('f-cada').textContent = Q.p ? `${nf(Q.p.leads, 1)} leads em nutrição por vendedor` : 'Sem QLP proposto';
+  x('n-ligv').textContent = Q.mlig == null ? '–' : nf(Q.mlig, 0);
+  x('f-ligv').textContent = Q.mlig == null ? 'Defina o QLP proposto na calculadora do squad' : `${nf(Q.ligD, 0)} ligações por dia do squad ÷ ${nf(Q.N, 0)} ${Q.N === 1 ? 'vendedor' : 'vendedores'}. Média atual de ${nf(Q.v.mediaAtual, 0)}`;
+  const N = Q.N, ok = N > 0;
+  const per = (m, d, lbl) => ok ? `${nf(m / N, 1)}<span class="pr">${nf(d / N, 1)} ${lbl}</span>` : '–';
+  x('pv-leads').innerHTML = per(v.leads, Q.leadsD, 'leads por dia');
+  x('pv-qual').innerHTML = per(Q.qual, Q.qualD, 'qualificados por dia');
+  x('pv-lig').innerHTML = per(Q.lig, Q.ligD, 'ligações por dia');
+  fillProd(x, Q.p, ok ? Q.ligD / N : 0, ok ? Q.qualD / N : 0,
+    ok ? (N === 1 ? 'O vendedor do squad' : `Cada um dos ${nf(N, 0)} vendedores do squad`) : 'Sem vendedor',
+    'Defina o QLP proposto e os dias úteis na Calculadora de QLP do squad para ver a produtividade.');
+}
+/* bloco de produtividade do vendedor (mesma lógica da visão por marca) */
+function fillProd(x, P, ligDia, qualDia, who, emptyMsg){
+  const g = state.g, meta = num(g.meta) / 100, ratio = num(state.mk.ratio);
+  x('p-who').textContent = who;
+  const brk = x('p-break');
+  if (!P) {
+    x('p-pct').textContent = '–'; x('p-fill').style.width = '0%';
+    brk.innerHTML = ''; x('p-stats').innerHTML = `<div><dt>Sem vendedor</dt><dd><small>${emptyMsg}</small></dd></div>`;
+    return;
+  }
+  const st = state.ideal;
+  x('p-pct').innerHTML = `${pf(P.pct)}<small>%</small>`;
+  x('p-fill').style.width = Math.min(100, P.pct * 100) + '%';
+  const mk = x('p-meta'); mk.style.left = Math.min(100, meta * 100) + '%'; mk.querySelector('span').textContent = `Meta ${nf(num(g.meta), 1)}%`;
+  x('p-scale').textContent = `${nf(P.dia, 0)} min`;
+  const gap = meta * P.dia - P.total;
+  const rowsB = [
+    ['Ligações', `${nf(ligDia, 0)} × ${nf(num(st.minLig), 1)} min`, P.m.lig],
+    ['Qualificação', `${nf(qualDia, 2)} × ${nf(num(st.minQual), 1)} min`, P.m.qual],
+    ['Desqualificação', `${nf(qualDia * ratio, 2)} × ${nf(num(st.minDesq), 1)} min`, P.m.desq],
+    ['Nutrição', `${nf(P.leads, 1)} leads × ${nf(P.tLead, 2)} min`, P.m.nut],
+    ['Webinar e pitch', `${nf(num(st.web), 0)} + ${nf(num(st.pitch), 0)} min`, P.m.web],
+    ['1:1 e alinhamentos', 'por dia', P.m.umum],
+    ['Grito', 'por dia', P.m.grito],
+    ['Treinamentos', `${nf(num(st.trein), 0)} min por semana`, P.m.trein],
+    ['ADP e prestação de contas', 'por dia', P.m.adp]
+  ];
+  brk.innerHTML = `<thead><tr><th scope="col">Atividade</th><th scope="col">Premissa</th><th scope="col">Minutos por dia</th></tr></thead>
+    <tbody>${rowsB.map(([a, p, v]) => `<tr><td class="nm">${a}</td><td class="pr2">${p}</td><td class="calc">${nf(v, 1)}</td></tr>`).join('')}
+    <tr class="tot"><td class="nm">Total produtivo</td><td class="pr2">${hm(P.total)}</td><td class="calc">${nf(P.total, 1)}</td></tr>
+    <tr class="pctr"><td class="nm">% produtivo</td><td class="pr2">${nf(P.total, 0)} de ${nf(P.dia, 0)} min.<br>Meta de ${nf(num(g.meta), 1)}%</td><td class="calc">${pf(P.pct)}%</td></tr></tbody>`;
+  x('p-stats').innerHTML = [
+    ['Ligações por dia', nf(ligDia, 0)],
+    ['Leads em nutrição', nf(P.leads, 1)],
+    ['Contato com leads', nf(P.m.lig + P.m.qual + P.m.desq + P.m.nut, 0) + ' min'],
+    ['Webinar, pitch e rituais', nf(P.m.web + P.rit, 0) + ' min'],
+    ['Tempo livre', nf(Math.max(0, P.dia - P.total), 0) + ' min'],
+    [gap > 0.05 ? 'Falta para a meta' : 'Acima da meta', nf(Math.abs(gap), 0) + ' min']
+  ].map(([t, v]) => `<div><dt>${t}</dt><dd>${v}</dd></div>`).join('');
+}
+function distTxt(d){
+  if (!d) return '–';
+  const parts = [];
+  if (d.ded) parts.push(`${d.ded} ${d.ded === 1 ? 'dedicado' : 'dedicados'}`);
+  if (d.shared) parts.push(d.ded ? 'parte de multimarca' : 'multimarca');
+  return parts.length ? parts.join(' + ') : '–';
+}
+function renderSquads(R, V){
+  const box = document.getElementById('m-squads');
+  if (V.t === 'one') { box.hidden = true; return; }
+  box.hidden = false;
+  const isSq = V.t === 'sq';
+  box.querySelector('.sq-head').hidden = isSq;
+  box.querySelector('.sq-pool').hidden = isSq;
+  document.getElementById('sq-list').hidden = !isSq;
+  const inSq = new Set(state.squads.flatMap(x => x.marcas));
+  const free = R.rows.filter(r => !inSq.has(r.n));
+  const chip = (r, rm) => `<span class="chip" draggable="true" data-brand="${esc(r.n)}" title="Arraste para um squad">${esc(r.n)}<span class="nd">${f2(r.need)}</span>${rm ? `<button type="button" data-sqr="${esc(r.n)}" aria-label="Tirar ${esc(r.n)} do squad">×</button>` : ''}</span>`;
+  document.getElementById('sq-pool').innerHTML = free.length ? free.map(r => chip(r, false)).join('') : '<span class="empty-hint">Todas as marcas já estão em squads.</span>';
+  document.getElementById('sq-msg').textContent = sqMsg;
+  const list = isSq ? [V.sq] : state.squads;
+  document.getElementById('sq-list').innerHTML = list.length ? list.map(sq => {
+    const S = calcSquad(sq, R);
+    const full = sq.marcas.length >= 5;
+    const body = S.rows.length ? `
+      <div class="qcells sq-kpis">
+        <div class="qc calc out-key"><span class="qc-l">QLP sugerido do squad</span><span class="qc-n">${nf(S.qlp, 0)}</span><span class="qc-f">${f2(S.need)} vendedores necessários, arredondado para cima</span></div>
+        <div class="qc calc"><span class="qc-l">Com as marcas separadas</span><span class="qc-n">${nf(S.separado, 0)}</span><span class="qc-f">${S.separado - S.qlp > 0 ? `O squad economiza ${nf(S.separado - S.qlp, 0)} ${S.separado - S.qlp === 1 ? 'vendedor' : 'vendedores'}` : 'Sem ganho ao juntar as marcas'}</span></div>
+        <div class="qc calc"><span class="qc-l">Ligações por dia por vendedor</span><span class="qc-n" data-x="n-ligv"></span><span class="qc-f" data-x="f-ligv"></span></div>
+        <div class="qc calc"><span class="qc-l">Cada vendedor do squad</span><span class="qc-n" data-x="n-cada"></span><span class="qc-f" data-x="f-cada"></span></div>
+      </div>
+      <details class="sqcalc" data-sqtog="${esc(sq.id)}"${sqOpen.has(sq.id) ? ' open' : ''}>
+        <summary><span>Calculadora de QLP do squad</span><small>Projetada a partir das marcas; o que você alterar aqui vale só para este squad</small></summary>
+        <div class="sqcalc-h"><button type="button" class="sq-del" data-sqreset="${esc(sq.id)}" data-x="sqreset" hidden>Voltar aos dados das marcas</button></div>
+        <div class="qrow"><p class="qrow-t">Premissas do squad</p><div class="qcells">
+          ${sqIn(sq, 'qlp', { key: true })}${sqIn(sq, 'dias')}${sqIn(sq, 'metaWeb')}${sqIn(sq, 'cadencia')}${sqIn(sq, 'mediaAtual', { base: true })}
+        </div></div>
+        <div class="qrow"><p class="qrow-t">Volume e meta do squad</p><div class="qcells">
+          ${sqOut('lig', 'Total de ligações')}${sqIn(sq, 'leads', { key: true })}${sqOut('qual', 'Meta de abertura')}${sqOut('need', 'Vendedores necessários')}${sqOut('mlig', 'Meta de ligação por vendedor', true)}
+        </div></div>
+        <div class="qrow"><p class="qrow-t">Receita do squad</p><div class="qcells">
+          ${sqIn(sq, 'meta', { key: true })}${sqIn(sq, 'convAbertura')}${sqOut('tm', 'Ticket médio')}
+        </div></div>
+      </details>
+      <div class="tscroll sq-tw"><table class="ct mt sq-t">
+        <thead><tr><th scope="col">Marca</th><th scope="col">Meta de leads</th><th scope="col">Meta de abertura</th><th scope="col">Meta (R$)</th><th scope="col">Ticket médio</th><th scope="col">Ligações</th><th scope="col">Vendedores necessários</th><th scope="col" class="st">No squad</th></tr></thead>
+        <tbody>${S.rows.map(r => `<tr><td class="nm">${esc(r.n)}</td><td class="calc">${nf(r.leads, 0)}</td><td class="calc">${nf(r.qual, 1)}</td><td class="calc">${brl(r.meta, 0)}</td><td class="calc">${r.tm ? brl(r.tm, 0) : '–'}</td><td class="calc">${nf(r.lig, 0)}</td><td class="calc">${f2(r.need)}</td><td class="st"><span class="tag2 ${S.dist[r.n] && S.dist[r.n].ded && !S.dist[r.n].shared ? 'ok' : 'multi'}">${distTxt(S.dist[r.n])}</span></td></tr>`).join('')}</tbody>
+        <tfoot>
+          <tr><td class="nm">Total do squad</td><td>${nf(S.leads, 0)}</td><td>${nf(S.qual, 1)}</td><td>${brl(S.meta, 0)}</td><td></td><td>${nf(S.lig, 0)}</td><td>${f2(S.need)}</td><td>${nf(S.qlp, 0)} sugeridos</td></tr>
+          <tr class="pv"><td class="nm">Por vendedor</td><td data-x="pv-leads"></td><td data-x="pv-qual"></td><td></td><td></td><td data-x="pv-lig"></td><td></td><td></td></tr>
+        </tfoot>
+      </table></div>
+      <p class="qrow-t sq-at">Distribuição sugerida dos ${nf(S.qlp, 0)} vendedores do ${sqHtml(sq)}</p>
+      <div class="sq-alloc">${S.sellers.map((sv, k) => { const names = [...new Set(sv.brands.map(b => b.n))]; const ded = names.length === 1; return `<div class="sv ${ded ? 'ded' : 'multi'}"><b>Vendedor ${k + 1}: ${ded ? 'dedicado' : 'multimarca'}</b><span>${sv.brands.map(b => `${esc(b.n)} (${f2(b.load)})`).join(' + ')}</span><div class="load"><i style="width:${Math.min(100, sv.load * 100)}%"></i></div><span>Carga de ${nf(sv.load * 100, 0)}%</span></div>`; }).join('')}</div>
+      <div class="qrow sq-prod"><p class="qrow-t">Produtividade de cada vendedor do squad</p>
+        <div class="mdgrid">
+          <article class="kpi kpi-ideal">
+            <p class="scen-name" data-x="p-who"></p>
+            <p class="scen-pct" data-x="p-pct"></p>
+            <div class="prog"><div class="prog-fill" data-x="p-fill"></div><div class="prog-meta" data-x="p-meta"><span></span></div></div>
+            <div class="scale"><span>0 min</span><span data-x="p-scale"></span></div>
+            <dl class="kstats" data-x="p-stats"></dl>
+            <div class="kcmp" data-x="p-cmp"></div>
+          </article>
+          <div class="tscroll"><table class="ct mb" data-x="p-break"></table></div>
+        </div>
+      </div>`
+      : '';
+    return `<article class="squad" data-sq="${esc(sq.id)}">
+      <header>
+        <input class="sq-name" value="${esc(sq.nome)}" data-sqn="${esc(sq.id)}" aria-label="Nome do squad">
+        <span class="sq-brs">${esc(sqBrands(sq))}</span>
+        <span class="sq-count">${sq.marcas.length} de 5 marcas</span>
+        <button type="button" class="sq-del" data-sqd="${esc(sq.id)}">Excluir squad</button>
+      </header>
+      <div class="sq-drop" data-drop="${esc(sq.id)}">
+        <div class="chips">${S.rows.length ? S.rows.map(r => chip(r, true)).join('') : '<span class="empty-hint">Arraste marcas para cá</span>'}</div>
+        ${full ? '' : `<label class="sq-addb">ou adicione pela lista <select data-sqa="${esc(sq.id)}"><option value="">Escolher marca</option>${free.map(r => `<option value="${esc(r.n)}">${esc(r.n)}</option>`).join('')}</select></label>`}
+      </div>
+      ${body}
+    </article>`;
+  }).join('') : '<p class="empty">Nenhum squad criado. Use o botão "Novo squad" e arraste as marcas para dentro dele.</p>';
+  list.forEach(sq => fillOne(sq, R));
+}
+function fillOne(sq, R){
+  const art = document.querySelector(`#sq-list article[data-sq="${CSS.escape(sq.id)}"]`);
+  if (!art) return;
+  const S = calcSquad(sq, R);
+  if (!S.rows.length) return;
+  fillSquad(art, sq, S, calcSqQ(sq, S));
+  fillCmp(art.querySelector('[data-x="p-cmp"]'), prList(R, S.rows.map(r => r.i)));
+}
+/* marcas do squad acima e abaixo da média, em versão compacta */
+function fillCmp(el, pr){
+  if (!el) return;
+  if (!pr.length) { el.innerHTML = ''; return; }
+  const meta = num(state.g.meta) / 100;
+  const nT = pr.reduce((a, x) => a + x.n, 0);
+  const avg = pr.reduce((a, x) => a + x.p.pct * x.n, 0) / nT;
+  const sorted = pr.filter(x => !x.sub).sort((a, b) => b.p.pct - a.p.pct);
+  if (!sorted.length) { el.innerHTML = ''; return; }
+  const up = sorted.filter(x => x.p.pct >= avg - 1e-9).length;
+  const pos = v => Math.min(100, Math.max(0, v * 100));
+  el.innerHTML = `<p class="kcmp-t">Marcas acima e abaixo da média<span>${up} acima, ${sorted.length - up} abaixo</span></p>
+    <ul class="cb-keys"><li><i class="ln"></i>Média ${pf(avg)}%</li><li><i class="ln dash"></i>Meta ${nf(num(state.g.meta), 1)}%</li><li>Cada marca no QLP definido; a média inclui os vendedores multimarca</li></ul>
+    ${sorted.map(x => `<div class="cb-row" title="${esc(x.sub || x.who)}"><span class="cb-l">${esc(x.who)}</span><div class="cb-track" role="img" aria-label="${esc(x.who)}: ${pf(x.p.pct)}%"><div class="cb-fill ${x.p.pct >= avg - 1e-9 ? 'up' : 'down'}" style="width:${pos(x.p.pct)}%"></div><span class="cb-avg" style="left:${pos(avg)}%"></span><span class="cb-meta" style="left:${pos(meta)}%"></span></div><span class="cb-v">${pf(x.p.pct)}%</span></div>`).join('')}`;
+}
+(function bindSquads(){
+  const box = document.getElementById('m-squads');
+  box.addEventListener('click', e => {
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.id === 'sq-add') {
+      const id = 's' + Date.now().toString(36);
+      state.squads.push({ id, nome: `Squad ${state.squads.length + 1}`, marcas: [] });
+      state.mk.filtro = 'sq:' + id;
+      sqMsg = ''; save(); refreshM();
+      box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (t.dataset.sqd) {
+      state.squads = state.squads.filter(x => x.id !== t.dataset.sqd); state.mk.filtro = 'todas'; sqMsg = ''; save(); refreshM();
+    } else if (t.dataset.sqr) moveBrand(t.dataset.sqr, 'pool');
+    else if (t.dataset.sqreset) {
+      const sq = state.squads.find(x => x.id === t.dataset.sqreset);
+      if (sq) { delete sq.calc; save(); fillOne(sq, calcM()); }
+    }
+  });
+  box.addEventListener('change', e => { const s = e.target.closest('select[data-sqa]'); if (s && s.value) moveBrand(s.value, s.dataset.sqa); });
+  box.addEventListener('input', e => {
+    const c = e.target.closest('input[data-sqc]');
+    if (c) {
+      const [id, k] = c.dataset.sqc.split('|');
+      const sq = state.squads.find(x => x.id === id); if (!sq) return;
+      sq.calc = sq.calc || {};
+      if (c.value.trim() === '') delete sq.calc[k]; else sq.calc[k] = getVal(c);
+      save(); fillOne(sq, calcM());
+      return;
+    }
+    const i = e.target.closest('input[data-sqn]'); if (!i) return;
+    const sq = state.squads.find(x => x.id === i.dataset.sqn); if (!sq) return;
+    sq.nome = i.value; save();
+    buildFilter();
+    document.querySelectorAll(`[data-sqnm="${CSS.escape(sq.id)}"]`).forEach(el => { el.textContent = sq.nome; });
+  });
+  box.addEventListener('toggle', e => {
+    const d = e.target; if (!d.matches || !d.matches('details[data-sqtog]')) return;
+    if (d.open) sqOpen.add(d.dataset.sqtog); else sqOpen.delete(d.dataset.sqtog);
+  }, true);
+  box.addEventListener('dragstart', e => { const c = e.target.closest('.chip'); if (c) { e.dataTransfer.setData('text/plain', c.dataset.brand); e.dataTransfer.effectAllowed = 'move'; } });
+  box.addEventListener('dragover', e => { const d = e.target.closest('[data-drop]'); if (d) { e.preventDefault(); d.classList.add('drop-on'); } });
+  box.addEventListener('dragleave', e => { const d = e.target.closest('[data-drop]'); if (d && !d.contains(e.relatedTarget)) d.classList.remove('drop-on'); });
+  box.addEventListener('drop', e => { const d = e.target.closest('[data-drop]'); if (!d) return; e.preventDefault(); d.classList.remove('drop-on'); const n = e.dataTransfer.getData('text/plain'); if (n) moveBrand(n, d.dataset.drop); });
+})();
+
+/* copiar premissas de uma marca para todas */
+document.getElementById('m-detail').addEventListener('click', e => {
+  const b = e.target.closest('button[data-mcopy]'); if (!b) return;
+  const src = state.mk.list[+b.dataset.mcopy];
+  state.mk.list.forEach(m => { Object.keys(MK_PREM).forEach(k => { m[k] = src[k]; }); });
+  save(); renderM();
+  const msg = $o('mcopy-msg'); if (msg) msg.innerHTML = `<b>Premissas aplicadas às ${state.mk.list.length} marcas.</b>`;
+});
+
+function showTab(){
+  const t = location.hash === '#marcas' ? 'marcas' : 'geral';
+  document.getElementById('view-geral').hidden = t !== 'geral';
+  document.getElementById('view-marcas').hidden = t !== 'marcas';
+  document.querySelectorAll('.tabs a').forEach(a => {
+    if (a.dataset.tab === t) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+}
+window.addEventListener('hashchange', showTab);
+document.getElementById('m-filter').addEventListener('change', e => { state.mk.filtro = e.target.value; sqMsg = ''; save(); refreshM(); });
+// a produtividade das marcas usa a Capacidade instalada da visão geral; a Calculadora de QLP não alimenta mais as marcas
+render = (orig => function(){ orig(); renderM(); })(render);
+
+/* ---------- Versão compartilhada (Firebase) e histórico ---------- */
+const clone = o => JSON.parse(JSON.stringify(o));
+function sharedOf(s){
+  return clone({ g: s.g, atual: s.atual, ideal: s.ideal, qlp: s.qlp, mk: { ratio: s.mk.ratio, list: s.mk.list },
+    squads: s.squads.map(q => { const c = Object.assign({}, q); delete c.calcClosed; return c; }), abs: s.abs });
+}
+function refreshAll(){ build(); render(); buildQ(); renderQ(); buildM(); renderM(); }
+
+const FB_CONFIG = { apiKey: "AIzaSyCUbCa62_eoggqBizfCzx64wpHxllrv0hY", authDomain: "campanha-300.firebaseapp.com", databaseURL: "https://campanha-300-default-rtdb.firebaseio.com", projectId: "campanha-300", storageBucket: "campanha-300.firebasestorage.app", messagingSenderId: "360687211965", appId: "1:360687211965:web:aab90253849af1b555eed4" };
+const FB_ROOT = 'calculadora_tripulacao_cenario_1600k';
+const NAME_KEY = 'calc-tripulacao-300-cenario-1600k-nome';
+
+const SYNC = { db: null, ref: null, loaded: false, last: null, timer: null, writing: false, again: false, slowT: null, seeded: false, online: false };
+const SYNC_TXT = {
+  local: 'Modo local: não foi possível conectar ao Firebase. As alterações ficam só neste navegador.',
+  loading: 'Carregando a versão compartilhada…',
+  slow: 'A versão compartilhada ainda não carregou. Os números abaixo podem estar desatualizados.',
+  ok: 'Versão compartilhada: as alterações são salvas para todos e aparecem na hora para quem estiver com a página aberta.',
+  saving: 'Salvando para todos…',
+  off: 'Sem conexão com o Firebase. As alterações serão enviadas quando a conexão voltar.',
+  err: 'Não foi possível salvar a última alteração para todos. Tente de novo em instantes.'
+};
+let myName = '';
+try { myName = localStorage.getItem(NAME_KEY) || ''; } catch (e) {}
+function setSync(st){
+  const el = document.getElementById('sync');
+  el.dataset.st = st;
+  el.innerHTML = `<span>${esc(SYNC_TXT[st] || '')}</span>${st !== 'local' ? `<span class="sync-who">Editando como <b>${esc(myName || 'sem nome')}</b> <button type="button" class="linkbtn" id="sync-name">trocar</button></span>` : ''}`;
+  document.getElementById('foot-note').textContent = st === 'local' ? 'As alterações ficam salvas neste navegador.' : 'As alterações ficam salvas na versão compartilhada.';
+}
+
+/* pede o nome uma vez, para o histórico */
+function askName(){
+  const dlg = document.getElementById('name-dlg');
+  dlg.hidden = false;
+  const inp = dlg.querySelector('input');
+  inp.value = myName; setTimeout(() => inp.focus(), 30);
+}
+function closeName(save){
+  const dlg = document.getElementById('name-dlg');
+  if (save) {
+    const v = dlg.querySelector('input').value.trim().slice(0, 60);
+    if (v) { myName = v; try { localStorage.setItem(NAME_KEY, v); } catch (e) {} }
+  }
+  dlg.hidden = true;
+  setSync(document.getElementById('sync').dataset.st);
+}
+document.getElementById('name-form').addEventListener('submit', e => { e.preventDefault(); closeName(true); });
+document.getElementById('name-skip').addEventListener('click', () => closeName(false));
+document.getElementById('sync').addEventListener('click', e => { if (e.target.id === 'sync-name') askName(); });
+
+/* --- diferenças entre duas versões, em linguagem do dia a dia --- */
+const G_LABEL = { dia: 'Jornada (min/dia)', meta: 'Meta produtiva (%)', semana: 'Dias úteis na semana' };
+const fv = v => v === undefined || v === null || v === '' ? '–' : typeof v === 'number' ? nf(v, 2) : String(v);
+function diffShared(a, b){
+  const out = [];
+  const push = (label, de, para) => { if (JSON.stringify(de) !== JSON.stringify(para)) out.push({ label, de: fv(de), para: fv(para) }); };
+  const keys = (x, y) => [...new Set([...Object.keys(x || {}), ...Object.keys(y || {})])];
+  a = a || {};
+  keys(a.g, b.g).forEach(k => push(G_LABEL[k] || k, (a.g || {})[k], b.g[k]));
+  SCENS.forEach(s => keys(a[s.id], b[s.id]).forEach(k => push(`${s.nome} · ${ARIA[k] || k}`, (a[s.id] || {})[k], (b[s.id] || {})[k])));
+  keys(a.qlp, b.qlp).forEach(k => push(`Calculadora de QLP · ${(Q_FIELDS[k] || [k])[0]}`, (a.qlp || {})[k], (b.qlp || {})[k]));
+  const am = a.mk || {}, bm = b.mk || {};
+  push('Desqualificações por qualificação', am.ratio, bm.ratio);
+  ((b.abs || {}).meses || []).forEach((m, i) => push(`Absenteísmo · ${m.n} (%)`, (((a.abs || {}).meses || [])[i] || {}).v, m.v));
+  (bm.list || []).forEach((m, i) => {
+    const o = (am.list || [])[i] || {};
+    keys(o, m).filter(k => k !== 'n').forEach(k => push(`${m.n} · ${M_LABEL[k] || k}`, o[k], m[k]));
+  });
+  const as = a.squads || [], bs = b.squads || [];
+  const nm = q => `${q.nome} (${q.marcas.join(', ') || 'sem marcas'})`;
+  bs.forEach(q => {
+    const o = as.find(x => x.id === q.id);
+    if (!o) { out.push({ label: 'Squad criado', de: '–', para: nm(q) }); return; }
+    push(`Nome do ${o.nome}`, o.nome, q.nome);
+    push(`Marcas do ${q.nome}`, o.marcas.join(', ') || 'sem marcas', q.marcas.join(', ') || 'sem marcas');
+    keys(o.calc, q.calc).forEach(k => {
+      const d = (o.calc || {})[k], p = (q.calc || {})[k];
+      if (d !== p) out.push({ label: `${q.nome} · Calculadora do squad · ${(SQC[k] || [k])[0]}`, de: d === undefined ? 'dado das marcas' : fv(d), para: p === undefined ? 'dado das marcas' : fv(p) });
+    });
+  });
+  as.filter(o => !bs.find(q => q.id === o.id)).forEach(o => out.push({ label: 'Squad excluído', de: nm(o), para: '–' }));
+  return out;
+}
+
+function normalize(s){
+  if (!s.qlp) s.qlp = clone(DEFAULTS.qlp);
+  if (!s.mk || !Array.isArray(s.mk.list)) s.mk = clone(DEFAULTS.mk);
+  if (!Array.isArray(s.squads)) s.squads = [];
+  if (!s.abs || !Array.isArray(s.abs.meses)) s.abs = clone(DEFAULTS.abs);
+  s.squads.forEach(q => { if (!Array.isArray(q.marcas)) q.marcas = []; });
+  s.mk.list.forEach(m => { Object.keys(MK_PREM).forEach(k => { if (m[k] === undefined) m[k] = MK_PREM[k]; }); });
+  return s;
+}
+function applyRemote(sh){
+  const filtro = state.mk.filtro;
+  const closed = {}; state.squads.forEach(q => { if (q.calcClosed) closed[q.id] = true; });
+  const s = normalize(clone(sh));
+  s.mk.filtro = filtro;
+  s.squads.forEach(q => { if (closed[q.id]) q.calcClosed = true; });
+  state = s;
+  saveLocal();
+  refreshAll();
+}
+
+function queueShared(){
+  if (!SYNC.ref || !SYNC.loaded) return;
+  clearTimeout(SYNC.timer);
+  SYNC.timer = setTimeout(() => { SYNC.timer = null; writeShared(); }, 900);
+}
+async function writeShared(note){
+  if (!SYNC.ref) return;
+  if (SYNC.writing) { SYNC.again = true; return; }
+  const payload = sharedOf(state);
+  const changes = note ? [] : diffShared(SYNC.last, payload);
+  if (!note && !changes.length) return;
+  SYNC.writing = true; setSync(SYNC.online ? 'saving' : 'off');
+  const t = new Date().toISOString(), by = myName || 'Sem nome';
+  // o estado vai como texto JSON: o Realtime Database não guarda listas vazias
+  const prev = SYNC.last;
+  SYNC.last = payload;
+  try {
+    await SYNC.ref.child('estado').set({ json: JSON.stringify(payload), t, by });
+    setSync(SYNC.online ? 'ok' : 'off');
+    SYNC.ref.child('historico').push({ t, by, note: note || '', changes: JSON.stringify(changes.slice(0, 40)), total: changes.length }).catch(() => {});
+  } catch (e) {
+    SYNC.last = prev;
+    setSync('err');
+  }
+  SYNC.writing = false;
+  if (SYNC.again) { SYNC.again = false; writeShared(); }
+}
+
+function renderHist(snap){
+  const box = document.getElementById('hist');
+  const items = [];
+  snap.forEach(c => { items.push(c.val()); });
+  items.reverse();
+  if (!items.length) { box.innerHTML = '<p class="empty">Nenhuma alteração registrada ainda.</p>'; return; }
+  const when = t => { const d = new Date(t); return isNaN(d) ? '' : d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); };
+  box.innerHTML = `<ul class="hlist">${items.map(x => {
+    let ch = []; try { ch = JSON.parse(x.changes || '[]'); } catch (e) {}
+    const more = (num(x.total) || 0) - ch.length;
+    return `<li class="hitem"><div class="hmeta"><b>${esc(x.by || 'Sem nome')}</b><span>${esc(when(x.t))}</span></div>
+      ${x.note ? `<p class="hnote">${esc(x.note)}</p>` : ''}
+      ${ch.length ? `<ul class="hch">${ch.map(c => `<li>${esc(c.label)}: ${c.de === '–' ? `<span class="para">${esc(c.para)}</span>` : c.para === '–' ? `<span class="de">${esc(c.de)}</span>` : `<span class="de">${esc(c.de)}</span> → <span class="para">${esc(c.para)}</span>`}</li>`).join('')}</ul>` : ''}
+      ${more > 0 ? `<p class="hmore">e mais ${more} ${more === 1 ? 'alteração' : 'alterações'}</p>` : ''}</li>`;
+  }).join('')}</ul>`;
+}
+
+function initShared(){
+  if (typeof firebase === 'undefined') { setSync('local'); return; }
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+    SYNC.db = firebase.database();
+  } catch (e) { setSync('local'); return; }
+  SYNC.ref = SYNC.db.ref(FB_ROOT);
+  setSync('loading');
+  document.getElementById('hist-wrap').hidden = false;
+  if (!myName) askName();
+  SYNC.slowT = setTimeout(() => { if (!SYNC.loaded) setSync('slow'); }, 10000);
+  SYNC.db.ref('.info/connected').on('value', s => {
+    SYNC.online = !!s.val();
+    if (SYNC.loaded && !SYNC.writing) setSync(SYNC.online ? 'ok' : 'off');
+  });
+  SYNC.ref.child('estado').on('value', snap => {
+    clearTimeout(SYNC.slowT);
+    const first = !SYNC.loaded;
+    SYNC.loaded = true;
+    const v = snap.val();
+    if (!v || !v.json) {
+      if (!SYNC.seeded) { SYNC.seeded = true; SYNC.last = null; writeShared('Versão compartilhada criada a partir dos números deste navegador'); }
+      return;
+    }
+    if (SYNC.timer || SYNC.writing) return; // alteração local a caminho
+    let inc; try { inc = JSON.parse(v.json); } catch (e) { return; }
+    if (JSON.stringify(inc) !== JSON.stringify(sharedOf(state))) applyRemote(inc);
+    SYNC.last = inc;
+    if (first || document.getElementById('sync').dataset.st !== 'saving') setSync(SYNC.online ? 'ok' : 'off');
+  }, () => { clearTimeout(SYNC.slowT); setSync('err'); });
+  SYNC.ref.child('historico').orderByChild('t').limitToLast(60).on('value', renderHist, () => {});
+}
+
+/* restaurar padrão: pede confirmação com um segundo clique */
+let resetArm = null;
+document.getElementById('reset').addEventListener('click', e => {
+  const b = e.currentTarget;
+  if (!resetArm) {
+    b.textContent = SYNC.ref ? 'Clique de novo para restaurar para todos' : 'Clique de novo para confirmar';
+    resetArm = setTimeout(() => { resetArm = null; b.textContent = 'Restaurar valores padrão'; }, 4000);
+    return;
+  }
+  clearTimeout(resetArm); resetArm = null; b.textContent = 'Restaurar valores padrão';
+  state = clone(DEFAULTS); saveLocal(); refreshAll();
+  if (SYNC.ref) { clearTimeout(SYNC.timer); SYNC.timer = null; writeShared('Restaurou os valores padrão'); }
+});
+build(); render(); buildQ(); renderQ(); buildM(); renderM(); showTab();
+setSync('local');
+initShared();
+</script>
+</body>
+</html>
